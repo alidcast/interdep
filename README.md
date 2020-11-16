@@ -2,7 +2,11 @@
 
 Interdep helps you intercept your project's `deps.edn` configuration(s) before starting your Clojure program, so that you can enhance the default [tools.deps](https://github.com/clojure/tools.deps.alpha) behavior for more complex use-cases.  
 
-### Usage 
+### Status 
+
+Experimental. Example is working, but core usage is not yet complete.
+
+### Usage
 
 #### Core
 
