@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Add root deps to babashka classpath
+export BABASHKA_CLASSPATH=$BABASHKA_CLASSPATH:$(clojure -Spath -Sdeps "$(cat ./deps.edn)")
+
+# Bind cli arguments
+all_args=("$@")
+script_name=$1
+script_args=$2
+
+# Start script, forwarding its arguments
+bb "./scripts/${script_name}" "${script_args}"
