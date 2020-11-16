@@ -1,0 +1,9 @@
+# clj
+.nrepl-port
+.cpcache
+.shadow-cljs
+**/*.clj-kondo/.cache
+.calva
+
+# macOS
+.DS_Store
