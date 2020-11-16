@@ -2,8 +2,8 @@
  {:plugins [interdep.plugins.multi-repo]}
 
  :interdep.multi-repo/registry
- ["app-main-lib"
-  "app-sub-lib"]
+ ["foobar-app"
+  "foobar-util"]
 
  :deps
  {org.rejoice-cljc/interdep {:local/root "../"}}
