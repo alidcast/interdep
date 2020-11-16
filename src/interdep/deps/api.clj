@@ -34,13 +34,3 @@
   "Read a sub-directory's deps config."
   [dir]
   (-> (str dir "/deps.edn") io/file slurp edn/read-string))
-
-(defn ppr-str
-  "Convert edn to a readable string.
-   Note: pr-str does output data with newlines characters, so we use output of pprint instead."
-  [edn]
-  (with-out-str
-    ;; disable namespaced maps shorthands, #:{}, since they're typically not used in deps.edn files 
-    ;; and for this use-case make the output less readable
-    (binding [*print-namespace-maps* false]
-      (pr/pprint edn))))

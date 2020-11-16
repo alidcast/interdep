@@ -1,31 +1,30 @@
 (ns interdep.deps
+  (:refer-clojure :exclude [load])
   (:require
-   [clojure.java.io :as io]
    [interdep.deps.api :as api]))
 
-(defn- cleanse-deps 
+(defn- cleanse-deps
   [deps]
   (dissoc deps :interdep/config))
 
-(defn- resolve-plugin! 
+(defn- resolve-plugin!
   [pns]
-  (when-not (find-ns pns) (throw (ex-info "Plugin namespace could not be found." {:ns pns})))
+  (require pns)
   (if-let [plugin-var (resolve (symbol (str pns) "plugin"))]
     @plugin-var
     (throw (ex-info "Plugin namespace missing its function." {:ns pns}))))
 
-(defn process 
+(defn process
   []
   (let [{:interdep/keys [config]
          :as root-deps}  (api/read-root-deps)
         plugins     (:plugins config)
         out-deps (cleanse-deps root-deps)
-        ctx {:root-deps root-deps
-             :out-deps out-deps}]
+        ctx {::root-deps root-deps
+             ::out-deps out-deps}]
     (reduce
-     (fn [ctx sym]
-       ((resolve-plugin! sym) ctx))
-     ctx 
+     #((resolve-plugin! %2) %1)
+     ctx
      plugins)))
 
 (comment
