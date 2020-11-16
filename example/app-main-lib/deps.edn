@@ -1,0 +1,6 @@
+{:interdep.multi-repo/includes
+ ["app-sub-lib"]
+ 
+ :aliases 
+ {:main-lib/main 
+  {:extra-paths ["src"]}}}

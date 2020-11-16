@@ -1,0 +1,13 @@
+{:interdep/config
+ {:plugins [interdep.plugins.multi-repo]}
+
+ :interdep.multi-repo/registry
+ ["app-main-lib"
+  "app-sub-lib"]
+
+ :deps
+ {org.rejoice-cljc/interdep {:local/root "../"}}
+
+ :aliases
+ {:prepare
+  {:exec-fn interdep.deps/process}}}
