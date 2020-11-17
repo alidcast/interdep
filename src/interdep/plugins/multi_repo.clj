@@ -3,6 +3,9 @@
    [interdep.deps :as deps]
    [interdep.deps.api :as api]))
 
+(def ^:dynamic opts
+  {:root-dir "./"})
+
 (defn- cleanse-deps
   [deps]
   (dissoc deps
@@ -38,7 +41,7 @@
           (fn [aliases]
             (into {} (for [[k v] aliases]
                        [k (update v :extra-paths
-                                  (fn [paths] (mapv #(api/join-path subdir %) paths)))])))))
+                                  (fn [paths] (mapv #(api/join-path (:root-dir opts) subdir %) paths)))])))))
 
 (defn- parse-sub-deps
   "Parse subrepo directory's deps config."
@@ -57,12 +60,14 @@
   (update d1 :aliases merge (get d2 :aliases)))
 
 (defn plugin
-  [{::deps/keys [out-deps] :as ctx}]
-  ;; todo output main deps with all includes and per project deps includes
-  (let [{:interdep.multi-repo/keys [registry]} out-deps
-        out-deps (cleanse-deps out-deps)]
-    (assoc ctx ::deps/out-deps
-           (reduce
-            combine-deps
-            out-deps
-            (mapv parse-sub-deps registry)))))
+  [{::deps/keys [process-opts out-deps]
+    :as ctx}]
+  (binding [opts (merge opts (::opts process-opts))]
+    ;; todo output main deps with all includes and per project deps includes
+    (let [{:interdep.multi-repo/keys [registry]} out-deps
+          out-deps (cleanse-deps out-deps)]
+      (assoc ctx ::deps/out-deps
+             (reduce
+              combine-deps
+              out-deps
+              (mapv parse-sub-deps registry))))))

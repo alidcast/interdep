@@ -1,18 +1,20 @@
 (ns interdep.deps.api
   "Shared api for processing deps."
   (:require
+   [clojure.string :as str]
    [clojure.java.io :as io]
-   [clojure.edn :as edn]
-   [clojure.pprint :as pr]))
+   [clojure.edn :as edn]))
 
 (def ^:private cfg
   {:build-dir ".repo/main"
    :deps-file "deps.edn"})
 
 (defn- join-path
-  "Join path strings separated by slash."
+  "Join path strings separated by single forward slash."
   [& paths]
-  (apply str (interpose "/" paths)))
+  (str/replace
+   (apply str (interpose "/" paths))
+   #"\/\/" "/"))
 
 (defn- join-path-keys
   "Joins paths of key-values in passed map.
