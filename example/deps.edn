@@ -6,8 +6,4 @@
   "foobar-util"]
 
  :deps
- {org.rejoice-cljc/interdep {:local/root "../"}}
-
- :aliases
- {:prepare
-  {:exec-fn interdep.deps/process}}}
+ {org.rejoice-cljc/interdep {:local/root "../"}}}
