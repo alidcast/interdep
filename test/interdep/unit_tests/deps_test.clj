@@ -6,4 +6,5 @@
   (testing "only allows deps aliases")
   (testing "only allows namespace alias keys")
   (testing "properly merges deps property")
+  (testing "properly qualifies alias paths")
   (testing "ouputs final deps file properly"))
