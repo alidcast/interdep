@@ -11,6 +11,7 @@
 
 (defn- guard-sub-deps!
   [dir deps]
+  ;; todo do not allow local deps in sub projects.
   (when (or (:paths deps)
             (:deps deps))
     (throw (ex-info "Only aliases paths and deps are allowed in nested repos."
@@ -19,26 +20,36 @@
     (throw (ex-info "Only namespaced alias keys are allowed in nested repos."
                     {:dir dir :alias-key k}))))
 
-(defn- merge-included-sub-dep
-  "Merge deps config of `included-dir`, found in ::includes property."
-  [clj-deps include-dir]
-  ;; todo maybe cache loaded deps. two outputs: ns-compiles and build-compiles
-  (let [_ (api/read-sub-deps include-dir)]
-    ; (-> clj-deps
-    ;     (update :paths into (mapv #(join-path module-dir %) paths))
-    ;     (update :deps into deps))
-    clj-deps))
+(defn- merge-subrepo-includes
+  "Merge any includes in subrepo."
+  [deps includes]
+  (reduce
+   (fn [deps include-dir]
+     (let [_ (api/read-sub-deps include-dir)]
+     ;; todo haven't handled this yet, includes are only for per-project builds.
+       deps))
+   deps
+   includes))
+
+(defn- qualify-subrepo-aliases-paths
+  "Have alias extra-paths be relative to root project dir."
+  [deps subdir]
+  (update deps :aliases
+          (fn [aliases]
+            (into {} (for [[k v] aliases]
+                       [k (update v :extra-paths
+                                  (fn [paths] (mapv #(api/join-path subdir %) paths)))])))))
 
 (defn- parse-sub-deps
-  "Parse subdirectory's deps.edn config.
-   Actions: 
-     - Guards against improperly configured modules.
-     - Merges deps of any :repo/includes directories."
-  [sub-dir]
-  (let [{:interdep.multi-repo/keys [includes] :as deps} (api/read-sub-deps sub-dir)
+  "Parse subrepo directory's deps config."
+  [subdir]
+  (let [{:interdep.multi-repo/keys [includes] :as deps} (api/read-sub-deps subdir)
         out-deps  (cleanse-deps deps)]
-    (guard-sub-deps! sub-dir out-deps)
-    (reduce merge-included-sub-dep out-deps includes)))
+    (guard-sub-deps! subdir out-deps)
+    (println (qualify-subrepo-aliases-paths out-deps subdir))
+    (-> out-deps
+        (qualify-subrepo-aliases-paths subdir)
+        (merge-subrepo-includes includes))))
 
 (defn combine-deps
   "Combines `d2` aliases into `d1` deps map."
