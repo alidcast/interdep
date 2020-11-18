@@ -1,4 +1,4 @@
-(ns interdep.deps.api
+(ns interdep.deps.util
   "Shared api for processing deps."
   (:require
    [clojure.string :as str]
@@ -9,7 +9,7 @@
   {:build-dir ".repo/main"
    :deps-file "deps.edn"})
 
-(defn- join-path
+(defn join-path
   "Join path strings separated by single forward slash."
   [& paths]
   (str/replace

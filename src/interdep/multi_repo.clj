@@ -1,6 +1,5 @@
-(ns interdep.plugins.multi-repo
+(ns interdep.multi-repo
   (:require
-   [interdep.deps :as deps]
    [interdep.deps.util :as util]))
 
 (def ^:dynamic opts
@@ -17,7 +16,7 @@
   ;; todo do not allow local deps in sub projects.
   (when (or (:paths deps)
             (:deps deps))
-    (throw (ex-info "Only aliases paths and deps are allowed in nested repos."
+    (throw (ex-info "Only aliased paths and deps are allowed in nested repos."
                     {:dir dir})))
   (when-let [k (some (fn [[k]] (when (not (namespace k)) k)) (:aliases deps))]
     (throw (ex-info "Only namespaced alias keys are allowed in nested repos."
@@ -40,8 +39,9 @@
   (update deps :aliases
           (fn [aliases]
             (into {} (for [[k v] aliases]
-                       [k (update v :extra-paths
-                                  (fn [paths] (mapv #(util/join-path (:root-dir opts) subdir %) paths)))])))))
+                       [k (if-let [paths (:extra-paths v)]
+                            (assoc v :extra-paths (mapv #(util/join-path (:root-dir opts) subdir %) paths))
+                            v)])))))
 
 (defn- parse-sub-deps
   "Parse subrepo directory's deps config."
@@ -59,14 +59,12 @@
   (update d1 :aliases merge (get d2 :aliases)))
 
 (defn process
-  [{::deps/keys [process-opts out-deps]
-    :as ctx}]
-  (binding [opts (merge opts (::opts process-opts))]
-    ;; todo output main deps with all includes and per project deps includes
-    (let [{:interdep.multi-repo/keys [registry]} out-deps
-          out-deps (cleanse-deps out-deps)]
-      (assoc ctx ::deps/out-deps
-             (reduce
-              combine-deps
-              out-deps
-              (mapv parse-sub-deps registry))))))
+  ([] (process {}))
+  ([-opts]
+   (binding [opts (merge opts -opts)]
+     (let [{:interdep.multi-repo/keys [registry] :as out-deps} (util/read-root-deps)
+           out-deps (cleanse-deps out-deps)]
+       (reduce
+        combine-deps
+        out-deps
+        (mapv parse-sub-deps registry))))))
