@@ -1,6 +1,6 @@
 # Interdep
 
-Interdep helps you intercept your project's `deps.edn` configuration(s) before starting your Clojure program, so that you can make the default functionality provided by Clojure's [tools.deps](https://github.com/clojure/tools.deps.alpha) work better for projects with multiple, local sub-project dependencies.
+Interdep helps you intercept your repo's `deps.edn` configuration(s) before starting your Clojure program, so that you can make the default functionality provided by Clojure's [tools.deps](https://github.com/clojure/tools.deps.alpha) work better for projects with many local subrepo dependencies.
 
 **Why can't monorepos be managed with tools.deps alone?**
 
@@ -8,7 +8,7 @@ While tools.deps lets you configure local dependencies via `:local/root` propert
 
 ### Status
 
-Experimental. Example is working, but core usage is not yet complete.
+Experimental/Alpha. But the usage is working, and scope is small, so API is unlikely to change much.
 
 ### Usage
 
@@ -17,7 +17,7 @@ The intended usage of Interdep is as follows:
 1) Process your project's `deps.edn` configuration(s).
 2) Use the processed deps output as the basis for Clojure program commands.
 
-Steps 1) is done using the Interdep namespaces below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). The basic idea is you output a deps.edn file in another directory and run your Clojure command from there. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
+Steps 1) is done using the Interdep namespaces below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). Just `spit` a deps.edn file into another directory and run your Clojure program from there. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
 
 #### `interdep.multi-repo`
 
@@ -26,7 +26,7 @@ Usage:
 - Call `interdep.multi-repo/process` to get deps config that combines your root and registered repository configurations.
 
 Some considerations to keep in mind:
-- Non-namespaced aliases are not allowed in sub-repos. E.g. instead of a `:test` alias, use `:[sub-project]/test`. This makes it simple to merge multiple aliases and use them together in the root of a project. 
+- Non-namespaced aliases are not allowed in sub-repos. So, for example, instead of having a `:dev` alias in a subrepo, you'd use `:[subrepo]/dev`. This makes it simple to merge multiple aliases and use them together in the root of a project.
 - Top-level `:paths` or `:deps` are not allowed in sub-repos. These properties are meant to be auto-included when starting a program but that behavior is inflexible when multiple dep configs are unified.
 - All `:extra-paths` and `:local/root` can be declared as usual. When processing deps, any path strings will be qualified to include their respective repository name, and can also be made relative to another directory using the `:root-dir` option. This was done so that you could still enter into a sub-project and start a Clojure program with its aliases, without any processing.
 
