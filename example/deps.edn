@@ -1,9 +1,7 @@
-{:interdep/config
- {:plugins [interdep.plugins.multi-repo]}
-
- :interdep.multi-repo/registry
- ["foobar-app"
-  "foobar-util"]
+{:interdep.multi-repo/registry
+ ["rejoice-app"
+  "rejoice-lib"]
 
  :deps
+ ;; note: in your project you'd require the actual repo, not a local dep.
  {org.rejoice-cljc/interdep {:local/root "../"}}}

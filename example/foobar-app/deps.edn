@@ -1,6 +1,0 @@
-{:interdep.multi-repo/includes
- ["foobar-util"]
- 
- :aliases 
- {:foobar-app/main 
-  {:extra-paths ["src"]}}}

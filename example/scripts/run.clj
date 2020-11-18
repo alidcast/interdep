@@ -3,8 +3,7 @@
 (require '[clojure.java.io :as io])
 (require '[clojure.tools.cli :as cli])
 (require '[clojure.pprint :as ppr])
-(require '[interdep.deps :as deps])
-(require '[interdep.plugins.multi-repo :as multi-repo])
+(require '[interdep.multi-repo :as multi-repo])
 (import java.lang.ProcessBuilder$Redirect)
 
 (def cli-opts
@@ -54,10 +53,9 @@
  (fn [_args opts]
    (let [out-dir  ".main"
          out-file ".main/deps.edn"
-         {::deps/keys [out-deps]} (deps/process
-                                   {::multi-repo/opts {:root-dir "../"}})]
+         deps (multi-repo/process {:root-dir "../"})]
      (io/make-parents out-file)
-     (spit out-file (ppr-str out-deps))
+     (spit out-file (ppr-str deps))
      (->
       ["clj" (str "-M" (:main-aliases opts))]
       (start-process out-dir)

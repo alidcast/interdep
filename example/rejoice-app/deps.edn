@@ -1,0 +1,4 @@
+{:aliases
+ {:app/main
+  {:extra-paths ["src"]
+   :extra-deps {org.rejoice/lib {:local/root "../rejoice-lib"}}}}}

@@ -1,10 +1,10 @@
 # Interdep
 
-Interdep helps you intercept your project's deps.edn configuration(s) before starting your Clojure program, so that you can make the `deps.edn` behavior provided by Clojure's [tools.deps](https://github.com/clojure/tools.deps.alpha) work better for monorepo projects.
+Interdep helps you intercept your project's `deps.edn` configuration(s) before starting your Clojure program, so that you can make the default functionality provided by Clojure's [tools.deps](https://github.com/clojure/tools.deps.alpha) work better for projects with multiple, local sub-project dependencies.
 
 **Why can't monorepos be managed with tools.deps alone?**
 
-While tools.deps lets you configure local dependencies via `:local/root` property, it does not allow you to include sub-project aliases from the root project. So, for example, if a sub-project has a `:dev` alias, it is not called unless your starting the Clojure program from that project's directory. This is limiting, since you're forced to either declare all aliases in the root of the project (splitting the configuration of a nested sub-project) or enter each sub-project in order use its aliases. Also, using local file path dependencies is not tenable if your deployment needs to be reproducible (such as when deploying Datomic Ions).
+While tools.deps lets you configure local dependencies via `:local/root` property, it does not allow you to include sub-project aliases from the root project. So, for example, if a sub-project has a `:dev` alias, it is not called unless your starting the Clojure program from that project's directory. This is limiting, since you either have to declare all aliases in the root of the project (splitting the configuration of a nested sub-project) or call a command only from a sub-project's directory. Also, using local file path dependencies is not tenable if your deployment needs to be reproducible (such as when deploying Datomic Ions).
 
 ### Status
 
@@ -14,49 +14,59 @@ Experimental. Example is working, but core usage is not yet complete.
 
 The intended usage of Interdep is as follows:
 
-1) Register plugins in in your project's root `deps.edn` file, under the `:interdep/config` property. 
-2) Call `interdep.deps/process` to process these plugins sequentially.
-3) Use the processed deps output as the basis for Clojure commands.
+1) Process your project's `deps.edn` configuration(s).
+2) Use the processed deps output as the basis for Clojure program commands.
 
-Steps 1) and 2) are done using Interdep. Step 3) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for reference.
+Steps 1) is done using the Interdep namespaces below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). The basic idea is you output a deps.edn file in another directory and run your Clojure command from there. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
 
-#### Features
-
-##### `interdep.multi-repo`
+#### `interdep.multi-repo`
 
 Usage: 
 - Register any nested repositories in your root deps.edn, using the `:interdep.multi-repo/registry` config property.
-- Include any sub-repositories in another using the `interdep.multi-repo/includes` property.
+- Call `interdep.multi-repo/process` to get deps config that combines your root and registered repository configurations.
 
-For example, for this directory structure: 
+Some considerations to keep in mind:
+- Non-namespaced aliases are not allowed in sub-repos. E.g. instead of a `:test` alias, use `:[sub-project]/test`. This makes it simple to merge multiple aliases and use them together in the root of a project. 
+- Top-level `:paths` or `:deps` are not allowed in sub-repos. These properties are meant to be auto-included when starting a program but that behavior is inflexible when multiple dep configs are unified.
+- All `:extra-paths` and `:local/root` can be declared as usual. When processing deps, any path strings will be qualified to include their respective repository name, and can also be made relative to another directory using the `:root-dir` option. This was done so that you could still enter into a sub-project and start a Clojure program with its aliases, without any processing.
+
+As an example, say an application has the following directory structure: 
 ```
-- myapp-common
-- myapp-frontend
-- myapp-backend
+- rejoice-app
+- rejoice-api
+- rejoice-model
 deps.edn
 ```
 
-Your root `deps.edn` config would be as follows:
+The `deps.edn` configs could be as follows:
 ```clj
-{:interdep/config
- {:plugins [interdep.plugins.multi-repo]}
+;; root deps.edn
+{:interdep.multi-repo/registry
+ ["rejoice-app"
+  "rejoice-api"
+  "rejoice-model"]
 
- :interdep.multi-repo/registry
- ["myapp-common"
-  "myapp-frontend"
-  "myapp-backend"]   
+;; app deps.edn
+{:aliases 
+ {:app/main 
+  {:extra-deps {org.rejoice/model {:local/root "../rejoice-model"}}}}}   
+
+;; api deps.edn
+{:aliases 
+ {:api/main 
+  {:extra-deps {org.rejoice/model {:local/root "../rejoice-model"}}}}}
 ```
 
-Then another sub-project could look like:
-
+Then you'd call `interdep.multi-repo/process` and the output would be: 
 ```clj
-{:interdep.multi-repo/includes
- ["myapp-common"]}
+{:aliases 
+ {:app/main 
+  {:extra-deps {org.rejoice/model {:local/root "../rejoice-model"}}}
+  :api/main 
+  {:extra-deps {org.rejoice/model {:local/root "../rejoice-model"}}}}}
 ```
 
-Some considerations to keep in mind:
-- Non-namespaced aliases are not allowed. This makes it easy to merge nested project aliases. So, for example, instead of a `:test` alias, use `:[sub-project]/test`.
-- Sub-project top-level `:paths` or `:deps` are not allowed. These properties are auto-included when starting a program but that's less useful when calling them from a project where multiple dep configs are unified.
+With that deps config, you could call `clj -M:app/main:api/main` to run your project. Though listing out multiple namespaced aliases can get tedious, which is why the next namespace, `interdep.multi-alias`,  provides a better approach.
 
 ##### `interdep.multi-alias` 
 
