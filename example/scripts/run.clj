@@ -53,7 +53,7 @@
  (fn [_args opts]
    (let [out-dir  ".main"
          out-file ".main/deps.edn"
-         deps (multi-repo/process {:root-dir "../"})]
+         deps (multi-repo/process {:out-dir out-dir})]
      (io/make-parents out-file)
      (spit out-file (ppr-str deps))
      (->
