@@ -1,7 +1,7 @@
 (ns interdep.plugins.multi-repo
   (:require
    [interdep.deps :as deps]
-   [interdep.deps.api :as api]))
+   [interdep.deps.util :as util]))
 
 (def ^:dynamic opts
   {:root-dir "./"})
@@ -28,7 +28,7 @@
   [deps includes]
   (reduce
    (fn [deps include-dir]
-     (let [_ (api/read-sub-deps include-dir)]
+     (let [_ (util/read-sub-deps include-dir)]
      ;; todo haven't handled this yet, includes are only for per-project builds.
        deps))
    deps
@@ -41,15 +41,14 @@
           (fn [aliases]
             (into {} (for [[k v] aliases]
                        [k (update v :extra-paths
-                                  (fn [paths] (mapv #(api/join-path (:root-dir opts) subdir %) paths)))])))))
+                                  (fn [paths] (mapv #(util/join-path (:root-dir opts) subdir %) paths)))])))))
 
 (defn- parse-sub-deps
   "Parse subrepo directory's deps config."
   [subdir]
-  (let [{:interdep.multi-repo/keys [includes] :as deps} (api/read-sub-deps subdir)
+  (let [{:interdep.multi-repo/keys [includes] :as deps} (util/read-sub-deps subdir)
         out-deps  (cleanse-deps deps)]
     (guard-sub-deps! subdir out-deps)
-    (println (qualify-subrepo-aliases-paths out-deps subdir))
     (-> out-deps
         (qualify-subrepo-aliases-paths subdir)
         (merge-subrepo-includes includes))))
@@ -59,7 +58,7 @@
   [d1 d2]
   (update d1 :aliases merge (get d2 :aliases)))
 
-(defn plugin
+(defn process
   [{::deps/keys [process-opts out-deps]
     :as ctx}]
   (binding [opts (merge opts (::opts process-opts))]

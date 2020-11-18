@@ -36,3 +36,6 @@
   "Read a sub-directory's deps config."
   [dir]
   (-> (str dir "/deps.edn") io/file slurp edn/read-string))
+
+(comment 
+  (-> (System/getProperty "clojure.basis") io/file slurp edn/read-string))
