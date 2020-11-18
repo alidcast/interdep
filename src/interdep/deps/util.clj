@@ -5,7 +5,7 @@
    [clojure.java.io :as io]
    [clojure.edn :as edn]))
 
-(defn join-path
+(defn jpath
   "Join path strings separated by single forward slash."
   [& paths]
   (str/replace
