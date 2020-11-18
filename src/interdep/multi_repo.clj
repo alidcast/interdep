@@ -22,36 +22,38 @@
     (throw (ex-info "Only namespaced alias keys are allowed in nested repos."
                     {:dir dir :alias-key k}))))
 
-(defn- merge-subrepo-includes
-  "Merge any includes in subrepo."
-  [deps includes]
-  (reduce
-   (fn [deps include-dir]
-     (let [_ (util/read-sub-deps include-dir)]
-     ;; todo haven't handled this yet, includes are only for per-project builds.
-       deps))
-   deps
-   includes))
+(defn- qualify-alias-extra-paths
+  "Make any alias extra-paths be relative to root project dir."
+  [alias-map subdir]
+  (if-let [paths (:extra-paths alias-map)]
+    (assoc alias-map :extra-paths
+           (mapv #(util/join-path (:root-dir opts) subdir %) paths))
+    alias-map))
 
-(defn- qualify-subrepo-aliases-paths
-  "Have alias extra-paths be relative to root project dir."
-  [deps subdir]
-  (update deps :aliases
-          (fn [aliases]
-            (into {} (for [[k v] aliases]
-                       [k (if-let [paths (:extra-paths v)]
-                            (assoc v :extra-paths (mapv #(util/join-path (:root-dir opts) subdir %) paths))
-                            v)])))))
+(defn- quality-alias-extra-deps
+  "Make any alias local deps be relative to root project dir."
+  [alias-map]
+  (if-let [deps (:extra-deps alias-map)]
+    (assoc alias-map :extra-deps
+           (into {} (for [[k v] deps]
+                      [k (if-let [local-path (and (map? v) (:local/root v))]
+                           (assoc v :local/root (util/join-path (:root-dir opts) local-path))
+                           v)])))
+    alias-map))
 
 (defn- parse-sub-deps
   "Parse subrepo directory's deps config."
   [subdir]
-  (let [{:interdep.multi-repo/keys [includes] :as deps} (util/read-sub-deps subdir)
+  (let [deps (util/read-sub-deps subdir)
         out-deps  (cleanse-deps deps)]
     (guard-sub-deps! subdir out-deps)
-    (-> out-deps
-        (qualify-subrepo-aliases-paths subdir)
-        (merge-subrepo-includes includes))))
+    (update out-deps :aliases
+            (fn [aliases]
+              (into {} (for [[k v] aliases]
+                         [k (-> v
+                                (qualify-alias-extra-paths subdir)
+                                (quality-alias-extra-deps)
+                                )]))))))
 
 (defn combine-deps
   "Combines `d2` aliases into `d1` deps map."
