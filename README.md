@@ -19,7 +19,7 @@ The intended usage of Interdep is as follows:
 
 Steps 1) is done using the Interdep namespaces below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). Just `spit` a deps.edn file into another directory and run your Clojure program from there. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
 
-### `interdep.multi-repo`
+### Multiple Subrepos
 
 The `interdep.multi-repo` namespace is for processing multiple, local subrepo deps into a unified config.
 
@@ -71,11 +71,11 @@ Then you'd call `interdep.multi-repo/process` and the output would be:
 
 With that deps config, you could call `clj -M:app/main:api/main` to run your project. Though listing out multiple namespaced aliases can get tedious, which is why the next namespace, `interdep.multi-alias`,  provides a better approach.
 
-##### `interdep.multi-alias` 
+### Multiple Aliases
 
 The `interdep.multi-alias` namespace is for matching multiple aliases based on configured profiles.
 
-Instead of explicitly passing aliases, profiles let you filter out which ones not to include. This is useful when you have multiple subrepos with multiple aliases,and you want to run several of those aliases together.
+Instead of explicitly passing aliases, profiles let you filter out which ones not to include. This is useful when you have multiple subrepos with multiple aliases and you want to run several of those aliases together.
 
 Usage: 
 - Configure alias profiles in your root deps.edn using the `:interdep.multi-alias/profiles` config property.
