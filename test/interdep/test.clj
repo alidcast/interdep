@@ -1,9 +1,9 @@
 (ns interdep.test
-  (:require [interdep.deps.util :as util]))
+  (:require [interdep.impl.deps :as deps]))
 
 (defmacro with-mock-deps
   "Mock root and subdir deps.edn configs."
   [{:keys [root-deps subdirs-deps]} x]
-  `(with-redefs [util/read-root-deps (constantly ~root-deps)
-                 util/read-sub-deps  (fn [k#] (get ~subdirs-deps k#))]
+  `(with-redefs [deps/read-root-config (constantly ~root-deps)
+                 deps/read-sub-config  (fn [k#] (get ~subdirs-deps k#))]
      ~x))

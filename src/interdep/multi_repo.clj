@@ -1,7 +1,7 @@
 (ns interdep.multi-repo
   (:require
-   [clojure.string :as str]
-   [interdep.deps.util :as util]))
+   [interdep.impl.deps :as deps]
+   [interdep.impl.path :as path]))
 
 (def ^:dynamic opts
   {:registry {}
@@ -13,27 +13,6 @@
   (dissoc deps
           :interdep.multi-repo/registry
           :interdep.multi-repo/includes))
-
-(defn- local-dep?
-  "Check whether x is a local dep map."
-  [x]
-  (and (map? x) (:local/root x)))
-
-(defn strip-path-back-dirs
-  "Remove any back dirs from a path string."
-  [path]
-  (str/replace path #"\.\.\/" ""))
-
-(defn- count-path-foward-dirs
-  "Count how many dirs forward a path is.
-   Note: no need to account for backward paths here since paths outside of root dir are not allowed."
-  [path]
-  (count (str/split path #"\/")))
-
-(defn- path-back-dirs 
-  "Generate a path with given number of back dirs, e.g. '../'."
-  [n]
-   (apply util/jpath (for [_ (range n)] "..")))
 
 ;;;; Validations 
 
@@ -61,8 +40,8 @@
   
   (doseq [[_ alias] (:aliases deps)
           [_ dep]  (:extra-deps alias)]
-    (when (and (local-dep? dep)
-               (not-any? #(= (-> dep :local/root strip-path-back-dirs) %) (:registry opts)))
+    (when (and (deps/local-dep? dep)
+               (not-any? #(= (-> dep :local/root path/strip-back-dirs) %) (:registry opts)))
       (throw (ex-info "Only registered subrepos are allowed as :local/root dep." {:dep dep})))))
 
 ;;;; Deps processing 
@@ -72,9 +51,9 @@
   [alias-map subdir]
   (if-let [paths (:extra-paths alias-map)]
     (assoc alias-map :extra-paths
-           (mapv #(util/jpath (path-back-dirs (count-path-foward-dirs (:out-dir opts)))
-                              subdir
-                              %)
+           (mapv #(path/join (path/make-back-dirs (path/count-foward-dirs (:out-dir opts)))
+                             subdir
+                             %)
                  paths))
     alias-map))
 
@@ -84,16 +63,17 @@
   (if-let [deps (:extra-deps alias-map)]
     (assoc alias-map :extra-deps
            (into {} (for [[k v] deps]
-                      [k (if-let [local-path (local-dep? v)]
-                           (assoc v :local/root (util/jpath (path-back-dirs (count-path-foward-dirs (:out-dir opts)))
-                                                            (strip-path-back-dirs local-path)))
+                      [k (if-let [local-path (deps/local-dep? v)]
+                           (assoc v :local/root
+                                  (path/join (path/make-back-dirs (path/count-foward-dirs (:out-dir opts)))
+                                             (path/strip-back-dirs local-path)))
                            v)])))
     alias-map))
 
 (defn- parse-sub-deps
   "Parse subrepo directory's deps config."
   [subdir]
-  (let [deps (util/read-sub-deps subdir)
+  (let [deps (deps/read-sub-config subdir)
         out-deps  (cleanse-deps deps)]
     (validate-subrepo-deps-config! subdir out-deps)
     (update out-deps :aliases
@@ -110,9 +90,10 @@
   (update d1 :aliases merge (get d2 :aliases)))
 
 (defn process
+  "Process root deps and subdeps config and merge them together."
   ([] (process {}))
   ([-opts]
-   (let [{:interdep.multi-repo/keys [registry] :as out-deps} (util/read-root-deps)]
+   (let [{:interdep.multi-repo/keys [registry] :as out-deps} (deps/read-root-config)]
     (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
       (validate-registry-dep-paths! registry)
       (reduce
