@@ -1,4 +1,5 @@
 (ns interdep.multi-repo
+  "Process multiple, local subrepo deps into a unified config."
   (:require
    [interdep.impl.deps :as deps]
    [interdep.impl.path :as path]))
@@ -98,7 +99,7 @@
       :subrepo-deps  - Map of registered subrepos paths to their respective deps configs."
   ([] (process {}))
   ([-opts]
-   (let [{:interdep.multi-repo/keys [registry] :as root-deps} (deps/read-root-config)
+   (let [{::keys [registry] :as root-deps} (deps/read-root-config)
          subdeps (atom {})]
     (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
       (validate-registry-dep-paths! registry)

@@ -8,14 +8,16 @@
 
 ;;;; Profile validations 
 
-;; Note: 
-;; s
+;; Note: Since the profile alias matchers filter out aliases, when no matchers are passed 
+;; all aliases would be included. This can be suprising if multiple profiles are combined,
+;; so we validate that the final profile include's at least one alias filter, as it's 
+;; better to be explicit inclusions.
 
 (defn validate-combined-profile-map!
   [{:keys [alias-ns* alias-name*] :as _profile}]
   (when (and (empty? alias-ns*)
              (empty? alias-name*))
-    (throw (ex-info "Combined profile must have at least one alias filter." {:profile _profile})))
+    (throw (ex-info "Combined profile must have at least one alias matcher." {:profile _profile})))
   :valid)
 
 ;;;; Alias profile matching 
@@ -50,11 +52,10 @@
    (fn [matches [alias-key]]
      (let  [a-ns (namespace alias-key)
             a-n  (name alias-key)]
-       (println a-ns a-n alias-ns* alias-name*)
        (if (and
             (or (empty? alias-ns*) (some #(= a-ns (-> % name str)) alias-ns*))
             (or (empty? alias-name*) (some #(= a-n (-> % name str)) alias-name*)))
-         (do (println "matched") (conj matches alias-key))
+         (conj matches alias-key)
          matches)))
    []
    (:aliases deps)))

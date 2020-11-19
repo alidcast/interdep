@@ -15,7 +15,7 @@
   (testing "does not allow final profile to not have any alias filter."
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo
-         #"Combined profile must have at least one alias filter"
+         #"Combined profile must have at least one alias matcher"
          (ma/use-profiles
           {:root-deps {::ma/profiles {:pro1 {}}}
            :out-deps  {:aliases {:sub1/env1 :alias}}}
