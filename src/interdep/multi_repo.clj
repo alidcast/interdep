@@ -26,7 +26,8 @@
   (some
    #(when (re-find #"\.\.\/" %)
       (throw (ex-info "Registered subrepos must be inside their root repo." {:path %})))
-   registry))
+   registry)
+  :valid)
 
 (defn- validate-subrepo-deps-config!
   [dir deps]
@@ -37,12 +38,12 @@
   (when-let [k (some (fn [[k]] (when (not (namespace k)) k)) (:aliases deps))]
     (throw (ex-info "Only namespaced alias keys are allowed in nested repos."
                     {:dir dir :alias-key k})))
-  
   (doseq [[_ alias] (:aliases deps)
           [_ dep]  (:extra-deps alias)]
     (when (and (deps/local-dep? dep)
                (not-any? #(= (-> dep :local/root path/strip-back-dirs) %) (:registry opts)))
-      (throw (ex-info "Only registered subrepos are allowed as :local/root dep." {:dep dep})))))
+      (throw (ex-info "Only registered subrepos are allowed as :local/root dep." {:dep dep}))))
+  :valid)
 
 ;;;; Deps processing 
 
@@ -70,11 +71,10 @@
                            v)])))
     alias-map))
 
-(defn- parse-sub-deps
-  "Parse subrepo directory's deps config."
-  [subdir]
-  (let [deps (deps/read-sub-config subdir)
-        out-deps  (cleanse-deps deps)]
+(defn- parse-subdeps
+  "Parse subrepo deps config."
+  [subdir deps]
+  (let [out-deps  (cleanse-deps deps)]
     (validate-subrepo-deps-config! subdir out-deps)
     (update out-deps :aliases
             (fn [aliases]
@@ -90,13 +90,25 @@
   (update d1 :aliases merge (get d2 :aliases)))
 
 (defn process
-  "Process root deps and subdeps config and merge them together."
+  "Process root deps and registered subrepo deps.
+   
+   Returns map of:
+      :out-deps      - Processed deps config.
+      :root-deps     - Root deps.edn config that served as basis for processing.
+      :subrepo-deps  - Map of registered subrepos paths to their respective deps configs."
   ([] (process {}))
   ([-opts]
-   (let [{:interdep.multi-repo/keys [registry] :as out-deps} (deps/read-root-config)]
+   (let [{:interdep.multi-repo/keys [registry] :as root-deps} (deps/read-root-config)
+         subdeps (atom {})]
     (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
       (validate-registry-dep-paths! registry)
-      (reduce
-       combine-deps
-       (cleanse-deps out-deps)
-       (mapv parse-sub-deps registry))))))
+      (let [out-deps (reduce
+                      (fn [deps subdir]
+                        (let [sd (deps/read-sub-config subdir)]
+                          (swap! subdeps assoc subdir sd)
+                          (combine-deps deps (parse-subdeps subdir sd))))
+                      (cleanse-deps root-deps)
+                      registry)]
+        {:out-deps     out-deps
+         :root-deps    root-deps
+         :subrepo-deps @subdeps})))))
