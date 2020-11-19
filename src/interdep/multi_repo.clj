@@ -8,12 +8,14 @@
    :out-dir ""})
 
 (defn- cleanse-deps
+  "Remove any custom multi-repo keys from deps config."
   [deps]
   (dissoc deps
           :interdep.multi-repo/registry
           :interdep.multi-repo/includes))
 
 (defn- local-dep?
+  "Check whether x is a local dep map."
   [x]
   (and (map? x) (:local/root x)))
 
@@ -38,7 +40,7 @@
 ;; Note: since Interdep does not allow unregistered :local/root deps and registered subrepos can't 
 ;; be outside root repo, in practice all deps are inside repo itself.
 ;; This constraint makes it a bit easier to change local paths, since we can count how many 
-;; dirs foward a registered dep to see how many dirs back a path should be changed to.
+;; dirs foward a registered dep is to see how many dirs back a path should be changed to.
 
 (defn- validate-registry-dep-paths!
   [registry]
