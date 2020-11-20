@@ -1,5 +1,6 @@
 (ns interdep.multi-alias
-  "Match multiple deps aliases based on configured profiles.")
+  "Match multiple deps aliases based on configured profiles."
+  (:require [interdep.impl.cli :as cli]))
 
 (defn- cleanse-deps
   "Remove any custom multi-alias keys from deps config."
@@ -14,10 +15,10 @@
 ;; better to be explicit inclusions.
 
 (defn validate-combined-profile-map!
-  [{:keys [alias-ns* alias-name*] :as _profile}]
+  [{:keys [alias-ns* alias-name*] :as _profile} profile-keys]
   (when (and (empty? alias-ns*)
              (empty? alias-name*))
-    (throw (ex-info "Combined profile must have at least one alias matcher." {:profile _profile})))
+    (throw (cli/err "Combined profiles must have at least one alias matcher:" profile-keys)))
   :valid)
 
 ;;;; Alias profile matching 
@@ -25,24 +26,23 @@
 (defn- combine-active-profiles
   "Combines active profile keys into a single profile config."
   [profiles profile-keys]
-  (let [path             (atom :default)
-        alias-namespaces (atom [])
-        alias-names      (atom [])
-        extra-opts       (atom {})]
-    (doseq [k profile-keys]
-      (let [m (get profiles k)]
-       (when-let [p (:path m)]
-         (reset! path p))
-       (when-let [namespaces (:alias-ns* m)]
-         (swap! alias-namespaces into namespaces))
-       (when-let [names (:alias-name* m)]
-         (swap! alias-names into names))
-       (when-let [opts (:extra-opts m)]
-         (swap! alias-names merge opts))))
-    {:path        @path
-     :alias-ns*   @alias-namespaces
-     :alias-name* @alias-names
-     :extra-opts  @extra-opts}))
+  (reduce
+   (fn [acc k]
+     (let [m    (get profiles k)
+           p    (:path m)
+           a-ns (:alias-ns* m)
+           a-n  (:alias-name* m)
+           o    (:extra-opts m)]
+       (cond-> acc
+         p    (assoc :path p)
+         a-ns (update :alias-ns* into a-ns)
+         a-n  (update :alias-name* into a-n)
+         o    (update :extra-opts merge o))))
+   {:path :default
+    :alias-ns*   []
+    :alias-name* []
+    :extra-opts  {}}
+   profile-keys))
 
 (defn- match-deps-aliases
   "Matches any deps aliases keys if namespace and name is in alias-ns* and alias-name* vectors, respectively.
@@ -76,22 +76,23 @@
    Returns processed deps, with following extra properties:
      ::matched-aliases  - matched profile aliases.
      ::extra-options    - matched profile extra-options."
-  ([deps] (use-profiles deps {}))
+  ([deps] (use-profiles deps []))
   ([-processed-deps profile-keys]
-   (let [{:keys [out-deps root-deps subrepo-deps]} -processed-deps
-         processed-deps (update -processed-deps :out-deps cleanse-deps)
-         profiles (::profiles root-deps)]
-     (if (seq profile-keys)
-       (let [{:keys [path alias-ns* alias-name* extra-opts]
-              :as profile} (combine-active-profiles profiles profile-keys)]
-         (validate-combined-profile-map! profile)
+   (cli/with-err-boundary "Error processing multi-alias profiles."
+     (let [{:keys [out-deps root-deps subrepo-deps]} -processed-deps
+           processed-deps (update -processed-deps :out-deps cleanse-deps)
+           profiles (::profiles root-deps)]
+       (if (seq profile-keys)
+         (let [{:keys [path alias-ns* alias-name* extra-opts]
+                :as combined-profile} (combine-active-profiles profiles profile-keys)]
+           (validate-combined-profile-map! combined-profile profile-keys)
+           (-> processed-deps
+               (assoc ::matched-aliases
+                      (match-deps-aliases
+                       (if (= path :default) out-deps (get subrepo-deps path))
+                       alias-ns*
+                       alias-name*))
+               (assoc ::extra-options extra-opts)))
          (-> processed-deps
-             (assoc ::matched-aliases
-                    (match-deps-aliases
-                     (if (= path :default) out-deps (get subrepo-deps path))
-                     alias-ns*
-                     alias-name*))
-             (assoc ::extra-options extra-opts)))
-       (-> processed-deps
-           (assoc ::matched-aliases [])
-           (assoc ::extra-options {}))))))
+             (assoc ::matched-aliases [])
+             (assoc ::extra-options {})))))))

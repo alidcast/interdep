@@ -1,6 +1,7 @@
 (ns interdep.multi-repo
   "Process multiple, local subrepo deps into a unified config."
   (:require
+   [interdep.impl.cli :as cli]
    [interdep.impl.deps :as deps]
    [interdep.impl.path :as path]))
 
@@ -26,7 +27,7 @@
   [registry]
   (some
    #(when (re-find #"\.\.\/" %)
-      (throw (ex-info "Registered subrepos must be inside their root repo." {:path %})))
+      (throw (cli/err "Registered subrepo path must be inside root repo:" %)))
    registry)
   :valid)
 
@@ -34,16 +35,15 @@
   [dir deps]
   (when (or (:paths deps)
             (:deps deps))
-    (throw (ex-info "Only aliased paths and deps are allowed in nested repos."
+    (throw (cli/err "Only aliased paths and deps are allowed in nested repos."
                     {:dir dir})))
   (when-let [k (some (fn [[k]] (when (not (namespace k)) k)) (:aliases deps))]
-    (throw (ex-info "Only namespaced alias keys are allowed in nested repos."
-                    {:dir dir :alias-key k})))
+    (throw (cli/err "Only namespaced alias keys are allowed in nested repos:" k)))
   (doseq [[_ alias] (:aliases deps)
           [_ dep]  (:extra-deps alias)]
     (when (and (deps/local-dep? dep)
                (not-any? #(= (-> dep :local/root path/strip-back-dirs) %) (:registry opts)))
-      (throw (ex-info "Only registered subrepos are allowed as :local/root dep." {:dep dep}))))
+      (throw (cli/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
   :valid)
 
 ;;;; Deps processing 
@@ -82,8 +82,7 @@
               (into {} (for [[k v] aliases]
                          [k (-> v
                                 (qualify-alias-extra-paths subdir)
-                                (quality-alias-extra-deps)
-                                )]))))))
+                                (quality-alias-extra-deps))]))))))
 
 (defn- combine-deps
   "Combines `d2` aliases into `d1` deps map."
@@ -99,17 +98,18 @@
       :subrepo-deps  - Map of registered subrepos paths to their respective deps configs."
   ([] (process {}))
   ([-opts]
-   (let [{::keys [registry] :as root-deps} (deps/read-root-config)
-         subdeps (atom {})]
-    (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
-      (validate-registry-dep-paths! registry)
-      (let [out-deps (reduce
-                      (fn [deps subdir]
-                        (let [sd (deps/read-sub-config subdir)]
-                          (swap! subdeps assoc subdir sd)
-                          (combine-deps deps (parse-subdeps subdir sd))))
-                      (cleanse-deps root-deps)
-                      registry)]
-        {:out-deps     out-deps
-         :root-deps    root-deps
-         :subrepo-deps @subdeps})))))
+   (cli/with-err-boundary "Error processing multi-repo dependencies."
+     (let [{::keys [registry] :as root-deps} (deps/read-root-config)
+           subdeps (atom {})]
+       (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
+         (validate-registry-dep-paths! registry)
+         (let [out-deps (reduce
+                         (fn [deps subdir]
+                           (let [sd (deps/read-sub-config subdir)]
+                             (swap! subdeps assoc subdir sd)
+                             (combine-deps deps (parse-subdeps subdir sd))))
+                         (cleanse-deps root-deps)
+                         registry)]
+           {:out-deps     out-deps
+            :root-deps    root-deps
+            :subrepo-deps @subdeps}))))))

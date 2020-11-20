@@ -1,6 +1,7 @@
 (ns interdep.unit-tests.multi-alias-test
   (:require 
    [clojure.test :refer [deftest testing is]]
+   [interdep.test :as t]
    [interdep.multi-alias :as ma]))
 
 (deftest mutli-alias-test
@@ -15,11 +16,12 @@
   (testing "does not allow final profile to not have any alias filter."
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo
-         #"Combined profile must have at least one alias matcher"
-         (ma/use-profiles
-          {:root-deps {::ma/profiles {:pro1 {}}}
-           :out-deps  {:aliases {:sub1/env1 :alias}}}
-          [:pro1]))))
+         #"Combined profiles must have at least one alias matcher"
+         (t/without-err-boundary
+          (ma/use-profiles
+           {:root-deps {::ma/profiles {:pro1 {}}}
+            :out-deps  {:aliases {:sub1/env1 :alias}}}
+           [:pro1])))))
 
   (testing "matches aliases based on profile alias-ns* filter"
     (is (= [:sub1/env1]

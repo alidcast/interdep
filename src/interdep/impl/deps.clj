@@ -17,3 +17,4 @@
   "Read a subrepo's deps config."
   [dir]
   (-> (str dir "/deps.edn") io/file slurp edn/read-string))
+

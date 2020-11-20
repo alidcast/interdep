@@ -37,21 +37,22 @@
                                                  {:extra-deps {'t/dep {:local/root "../subrepo2"}}}}}}}
       (is (= {:aliases {:sub1/main {:extra-deps {'t/dep {:local/root "../../../subrepo2"}}}}}
              (:out-deps (mr/process {:out-dir ".builds/repos/main"}))))))
-  
-   (testing "does not allow registering subrepos outside of project"
-     (t/with-mock-deps {:root-deps {::mr/registry ["../subrepo1"]}}
-       (is (thrown-with-msg?
-            clojure.lang.ExceptionInfo
-            #"Registered subrepos must be inside their root repo"
-            (:out-deps (mr/process))))))
-  
+
+  (testing "does not allow registering subrepos outside of project"
+    (t/with-mock-deps {:root-deps {::mr/registry ["../subrepo1"]}}
+      (is
+       (thrown-with-msg?
+        clojure.lang.ExceptionInfo
+        #"Registered subrepo path must be inside root repo:"
+        (t/without-err-boundary (mr/process))))))
+
   (testing "does not allows subrepo to have non-aliased dep configs"
     (t/with-mock-deps {:root-deps {::mr/registry ["subrepo1"]}
                        :subdirs-deps {"subrepo1" {:paths []}}}
       (is (thrown-with-msg?
            clojure.lang.ExceptionInfo
            #"Only aliased paths and deps are allowed"
-           (mr/process)))))
+           (t/without-err-boundary (mr/process))))))
 
   (testing "does not allow subrepos to have non-namespaced alias keys"
     (t/with-mock-deps {:root-deps {::mr/registry ["subrepo1"]}
@@ -59,5 +60,5 @@
       (is (thrown-with-msg?
            clojure.lang.ExceptionInfo
            #"Only namespaced alias keys are allowed"
-           (mr/process))))))
+           (t/without-err-boundary (mr/process)))))))
 
