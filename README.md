@@ -8,7 +8,7 @@ While tools.deps lets you configure local dependencies via `:local/root` propert
 
 ## Status
 
-Experimental/Alpha. But the usage is working, and scope is small, so API is unlikely to change much.
+Experimental/Alpha. But the usage is working, and scope is small, so API is unlikely to change much after a few weeks. I'll document fns more fully then. Use git lib for now.
 
 ## Usage
 
@@ -60,7 +60,7 @@ The `deps.edn` configs could be as follows:
   {:extra-deps {rejoice-cljc/model {:local/root "../rejoice-model"}}}}}
 ```
 
-Then you'd call `interdep.multi-repo/process` and the output would be: 
+Then you'd call `interdep.multi-repo/process-deps` and the output would be: 
 ```clj
 {:aliases 
  {:app/main 
@@ -79,7 +79,7 @@ Instead of explicitly passing aliases, profiles let you filter out which ones no
 
 Usage: 
 - Configure alias profiles in your root deps.edn using the `:interdep.multi-alias/profiles` config property.
-- Call `interdep.multi-alias/use-profiles` to get matching alias configurations.
+- Call `interdep.multi-alias/with-profiles` to get matching alias configurations.
 
 Profile options:
 - `:path` - subrepo path to match aliases from. Defaults to matching from unified deps config.

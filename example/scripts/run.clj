@@ -59,11 +59,11 @@
    (let [out-dir  ".main"
          out-file ".main/deps.edn"
          profile-keys  (parse-profile-str (first args))
-         {deps :out-deps
-          ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process {:out-dir out-dir})
-                                                    (multi-alias/use-profiles profile-keys))]
+         {::multi-repo/keys  [main-deps]
+          ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process-deps {:out-dir out-dir})
+                                                    (multi-alias/with-profiles profile-keys))]
      (io/make-parents out-file)
-     (spit out-file (ppr-str deps))
+     (spit out-file (ppr-str main-deps))
      (->
       ["clj" (apply str "-M" matched-aliases)]
       (start-process out-dir)
