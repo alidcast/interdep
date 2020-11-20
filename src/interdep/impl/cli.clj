@@ -12,9 +12,11 @@
   (ex-info (str/join " " msg) {::invariant true}))
 
 (defmacro with-err-boundary
-  "Catchs any cli errors and prints them.
-   No need to show error location since these are invariants, not errors in user's source code."
+  "Catches any cli errors and prints them.
+   No need to show error msg with source code location, since these are invariants, not bugs in user's code."
   [msg f]
+  ;; note: below logic is similar to how errors are handled by Clojure's cli.
+  ;; https://github.com/clojure/brew-install/blob/1.10.1/src/main/clojure/clojure/run/exec.clj#L139-L154
   `(try
      ~f
      (catch ExceptionInfo e#
