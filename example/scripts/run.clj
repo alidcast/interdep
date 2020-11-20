@@ -3,7 +3,9 @@
 (require '[clojure.java.io :as io])
 (require '[clojure.tools.cli :as cli])
 (require '[clojure.pprint :as ppr])
+(require '[clojure.string :as str])
 (require '[interdep.multi-repo :as multi-repo])
+(require '[interdep.multi-alias :as multi-alias])
 (import java.lang.ProcessBuilder$Redirect)
 
 (def cli-opts
@@ -47,17 +49,23 @@
     ;; in deps.edn files,  but in babashka that binding isn't defined and therefore is already falsy.
      (ppr/pprint edn))))
 
+(defn parse-profile-str [s]
+  (mapv #(-> % (str/replace ":" "") keyword)
+        (re-seq #":[^:]+" s)))
 
 ;; Print processed deps to .main/deps.edn and then call clojure cli from there
 (handle-cli
- (fn [_args opts]
+ (fn [args _]
    (let [out-dir  ".main"
          out-file ".main/deps.edn"
-         deps (multi-repo/process {:out-dir out-dir})]
+         profile-keys  (parse-profile-str (first args))
+         {deps :out-deps
+          ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process {:out-dir out-dir})
+                                                    (multi-alias/use-profiles profile-keys))]
      (io/make-parents out-file)
      (spit out-file (ppr-str deps))
      (->
-      ["clj" (str "-M" (:main-aliases opts))]
+      ["clj" (apply str "-M" matched-aliases)]
       (start-process out-dir)
       ;; Wait for process to finish and then exit.
       .waitFor
