@@ -1,6 +1,8 @@
 (ns interdep.multi-alias
   "Match multiple deps aliases based on configured profiles."
-  (:require [interdep.impl.cli :as cli]))
+  (:require
+   [interdep.impl.cli :as cli]
+   [interdep.multi-repo :as mr]))
 
 (defn- cleanse-deps
   "Remove any custom multi-alias keys from deps config."
@@ -60,9 +62,9 @@
    []
    (:aliases deps)))
 
-(defn use-profiles
-  "Match active aliases in a processed deps config, based on passed profile keys.
-   
+(defn with-profiles
+  "Match active aliases based on profiles in processed deps config.
+
    Profile map options: 
      :path         - Path to match aliases from. Defaults to :main. 
                      On conflict: last wins.
@@ -76,11 +78,11 @@
    Returns processed deps, with following extra properties:
      ::matched-aliases  - matched profile aliases.
      ::extra-options    - matched profile extra-options."
-  ([deps] (use-profiles deps []))
+  ([deps] (with-profiles deps []))
   ([-processed-deps profile-keys]
    (cli/with-err-boundary "Error processing multi-alias profiles."
-     (let [{:keys [out-deps root-deps subrepo-deps]} -processed-deps
-           processed-deps (update -processed-deps :out-deps cleanse-deps)
+     (let [{::mr/keys [main-deps root-deps subrepo-deps]} -processed-deps
+           processed-deps (update -processed-deps ::mr/main-deps cleanse-deps)
            profiles (::profiles root-deps)]
        (if (seq profile-keys)
          (let [{:keys [path alias-ns* alias-name* extra-opts]
@@ -89,7 +91,7 @@
            (-> processed-deps
                (assoc ::matched-aliases
                       (match-deps-aliases
-                       (if (= path :default) out-deps (get subrepo-deps path))
+                       (if (= path :default) main-deps (get subrepo-deps path))
                        alias-ns*
                        alias-name*))
                (assoc ::extra-options extra-opts)))
