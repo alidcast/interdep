@@ -49,7 +49,7 @@
     ;; in deps.edn files,  but in babashka that binding isn't defined and therefore is already falsy.
      (ppr/pprint edn))))
 
-(defn parse-profile-str [s]
+(defn kw-str->kw-vec [s]
   (mapv #(-> % (str/replace ":" "") keyword)
         (re-seq #":[^:]+" s)))
 
@@ -58,7 +58,7 @@
  (fn [args _]
    (let [out-dir  ".main"
          out-file ".main/deps.edn"
-         profile-keys  (parse-profile-str (first args))
+         profile-keys  (kw-str->kw-vec (first args))
          {::multi-repo/keys  [main-deps]
           ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process-deps {:out-dir out-dir})
                                                     (multi-alias/with-profiles profile-keys))]

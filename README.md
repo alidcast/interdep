@@ -1,6 +1,6 @@
 # Interdep
 
-Interdep helps you intercept your repo's `deps.edn` configuration(s) before starting your Clojure program, so that you can make the default functionality provided by Clojure's [tools.deps](https://github.com/clojure/tools.deps.alpha) work better for projects with many local, subrepo dependencies, aka monorepos.
+Interdep helps you intercept your repo's `deps.edn` configuration(s) before starting your Clojure program, so that you can make the default functionality provided by Clojure's [tools.deps](https://github.com/clojure/tools.deps.alpha) work better for projects with many local sub-dependencies, i.e., monorepos.
 
 **Why can't monorepos be managed with tools.deps alone?**
 
@@ -17,7 +17,7 @@ The intended usage of Interdep is as follows:
 1) Process your project's `deps.edn` configuration(s).
 2) Use the processed deps output as the basis for Clojure program commands.
 
-Steps 1) is done using the Interdep namespaces below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). Just `spit` a deps.edn file into another directory and run your Clojure program from there. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
+Steps 1) is done using the Interdep utilities below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). Just `spit` a deps.edn file into another directory and run your Clojure program from there. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
 
 ### Multiple Subrepos
 
@@ -69,7 +69,7 @@ Then you'd call `interdep.multi-repo/process-deps` and the output would be:
   {:extra-deps {rejoice-cljc/model {:local/root "../rejoice-model"}}}}}
 ```
 
-With that deps config, you could call `clj -M:app/main:api/main` to run your project. Though listing out multiple namespaced aliases can get tedious, which is why the next namespace, `interdep.multi-alias`,  provides a better approach.
+After processing these deps config, you could call `clj -M:app/main:api/main` to run your project. Though listing out multiple namespaced aliases can get tedious, which is why the next namespace, `interdep.multi-alias`,  provides a better approach.
 
 ### Multiple Aliases
 
