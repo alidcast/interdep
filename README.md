@@ -116,7 +116,7 @@ Profile options:
 
 `interdep.multi-alias/profiles` returns map with:
 - `::matched-aliases`, matched aliases based on passed profile keys and configured profile options.
-- `::extra-options`, merged map of any `:extra-opts` in activated profiles.
+- `::extra-opts`, merged map of any `:extra-opts` in activated profiles.
 
 As an example, a repo's `deps.edn` configs may be:
 ```clj

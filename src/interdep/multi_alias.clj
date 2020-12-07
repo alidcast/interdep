@@ -77,7 +77,7 @@
    
    Returns processed deps, with following extra properties:
      ::matched-aliases  - matched profile aliases.
-     ::extra-options    - matched profile extra-options."
+     ::extra-opts    - matched profile extra-opts."
   ([deps] (with-profiles deps []))
   ([-processed-deps profile-keys]
    (cli/with-err-boundary "Error processing multi-alias profiles."
@@ -94,7 +94,7 @@
                        (if (= path :default) main-deps (get subrepo-deps path))
                        alias-ns*
                        alias-name*))
-               (assoc ::extra-options extra-opts)))
+               (assoc ::extra-opts extra-opts)))
          (-> processed-deps
              (assoc ::matched-aliases [])
-             (assoc ::extra-options {})))))))
+             (assoc ::extra-opts {})))))))
