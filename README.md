@@ -10,7 +10,7 @@ While tools.deps lets you configure local dependencies via `:local/root` propert
 
 Experimental/Alpha. But the usage is working, and scope is small, so API is unlikely to change much. Use git lib for now.
 
-## Documentation
+## Usage
 
 Interdep only provides utilities for processing deps configurations, it does not start your Clojure program for you. The intended usage of Interdep is as follows:
 
@@ -19,7 +19,7 @@ Interdep only provides utilities for processing deps configurations, it does not
 
 Steps 1) is done using the Interdep utilities below. Step 2) can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). Just `spit` out a deps.edn file and run your Clojure program from its directory. See this library's [example](https://github.com/rejoice-cljc/interdep/tree/master/example) for a working reference.
 
-### Usage
+### Introduction
 
 Interdep exposes the `multi-repo/process-deps` namespace for unifying local subrepo deps into a single config, and the `multi-alias/with-profiles` namespace for matching multiple aliases based on configured profiles. These functions are meant to be threaded together and return a namespaced context map.
 
