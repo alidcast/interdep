@@ -143,3 +143,6 @@ Then you could combine profiles depending on what aliases you wanted to use:
 - With the `:prod` profile only, aliases `:app/main` and `:api/main` would be used.
 - With the `:app` and `:dev` combined, ony `:app/main` and `app/local` would be used.
 
+## License
+
+Distributed under the [EPL v2.0](LICENSE)
