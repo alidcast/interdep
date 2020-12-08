@@ -8,7 +8,7 @@
 
 (def ^:dynamic opts
   {:registry {}
-   :out-dir ""})
+   :out-dir "."})
 
 (defn- cleanse-deps
   "Remove any custom multi-repo keys from deps config."
