@@ -72,9 +72,10 @@ The `deps.edn` configs could be as follows:
 You'd then use`interdep.multi-repo/process-deps` to unify local subrepo deps into a single config. 
 
 `interdep.multi-repo/process-deps` returns a map of: 
- - `::main-deps`, the unified deps config.
+ - `::main-deps`, the unified root and sub-deps config.
+ - `::main-deps`, the unified sub-deps config.
  - `::root-deps`, the root deps config.
- - `::subrepo-deps`, mapping of nested deps configs.
+ - `::subrepo-deps`, mapping of subproject deps configs.
 
 So, for the above deps config, `interdep.multi-repo/process-deps` would return a `::main-deps` of: 
 ```clj

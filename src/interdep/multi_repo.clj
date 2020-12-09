@@ -119,13 +119,14 @@
        (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
          (validate-registry-dep-paths! registry)
          (let [subdeps   (atom {})
-               main-deps (reduce
+               sub-deps (reduce
                           (fn [deps subdir]
                             (let [sd (read-sub-config subdir)]
                               (swap! subdeps assoc subdir sd)
                               (combine-deps deps (parse-subdeps subdir sd))))
-                          (cleanse-deps root-deps)
+                          {}
                           registry)]
-           {::main-deps    main-deps
+           {::main-deps    (merge (cleanse-deps root-deps) sub-deps)
             ::root-deps    root-deps
+            ::sub-deps     sub-deps
             ::subrepo-deps @subdeps}))))))
