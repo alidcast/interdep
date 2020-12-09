@@ -1,14 +1,14 @@
 # Interdep Usage
 
-Interdep only provides utilities for processing deps configuration, and leaves up to you the use of those processed deps as the basis for Clojure programs. 
+Interdep provides utilities for processing deps configs. It's up to you to use those processed deps as the basis for Clojure programs.
 
-In order to use the processed deps, you have two options: 
+To input deps into a Clojure program you have two options: 
 1) Generate a deps.edn file and start Clojure from its directory.
 2) Include the processed subproject deps as a Clojure cli `-Sdeps` argument.
 
-This can be scripted in Bash, or with tools like [Babashka](https://github.com/borkdude/babashka). See this library's [example](/example) for a working reference.
-
 Do note, you'll likely want to run your program from the root of your project, not from another subdirectory. This way, any tool that relies on files relative to root directory will work as usual. So, if you take approach 1), you'll likely need to configure your deps in another file that is not named `deps.edn` (as that one will be auto-generated). For that reason, by default, we recommend approach 2).
+
+You can script the Clojure start command  using Bash, or a library like [Babashka](https://github.com/borkdude/babashka). See this library's [example](/example) for a working reference. 
 
 ### Basic Example
 
@@ -72,10 +72,10 @@ The `deps.edn` configs could be as follows:
 You'd then use`interdep.multi-repo/process-deps` to unify local subrepo deps into a single config. 
 
 `interdep.multi-repo/process-deps` returns a map of: 
- - `::main-deps`, the unified root and sub-deps config.
- - `::main-deps`, the unified sub-deps config.
+ - `::main-deps`, the unified root and nested deps config.
+ - `::nested-deps`, the unified nested deps config.
  - `::root-deps`, the root deps config.
- - `::subrepo-deps`, mapping of subproject deps configs.
+ - `::subrepo-deps`, mapping of registered subrepo deps configs.
 
 So, for the above deps config, `interdep.multi-repo/process-deps` would return a `::main-deps` of: 
 ```clj
