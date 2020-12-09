@@ -11,12 +11,12 @@
                                       "subrepo2" {:aliases {:sub2/test :it-works}}}}
       (is (= {::mr/main-deps {:aliases {:sub1/test :it-works
                                         :sub2/test :it-works}}
-              ::mr/sub-deps {:aliases {:sub1/test :it-works
+              ::mr/nested-deps {:aliases {:sub1/test :it-works
                                        :sub2/test :it-works}}
               ::mr/subrepo-deps {"subrepo1" {:aliases {:sub1/test :it-works}}
                                  "subrepo2" {:aliases {:sub2/test :it-works}}}}
              (select-keys (mr/process-deps)
-                          [::mr/main-deps ::mr/sub-deps ::mr/subrepo-deps])))))
+                          [::mr/main-deps ::mr/nested-deps ::mr/subrepo-deps])))))
 
   (testing "qualifies subrepo alias extra-paths"
     (t/with-mock-deps {:root-deps {::mr/registry ["subrepo1"]}

@@ -109,7 +109,8 @@
   "Process root deps and registered subrepo deps.
    
    Returns map of:
-      ::main-deps    - Processed deps config.
+      ::main-deps    - Unified root and nested deps config.
+      ::nested-deps  - Unified nested deps config.
       ::root-deps    - Root deps.edn config that served as basis for processing.
       ::subrepo-deps - Map of registered subrepos paths to their respective deps configs."
   ([] (process-deps {}))
@@ -118,15 +119,15 @@
      (let [{::keys [registry] :as root-deps} (read-root-config)]
        (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
          (validate-registry-dep-paths! registry)
-         (let [subdeps   (atom {})
-               sub-deps (reduce
-                          (fn [deps subdir]
-                            (let [sd (read-sub-config subdir)]
-                              (swap! subdeps assoc subdir sd)
-                              (combine-deps deps (parse-subdeps subdir sd))))
-                          {}
-                          registry)]
-           {::main-deps    (merge (cleanse-deps root-deps) sub-deps)
+         (let [subrepo-deps (atom {})
+               nested-deps (reduce
+                            (fn [deps subdir]
+                              (let [sd (read-sub-config subdir)]
+                                (swap! subrepo-deps assoc subdir sd)
+                                (combine-deps deps (parse-subdeps subdir sd))))
+                            {}
+                            registry)]
+           {::main-deps    (merge (cleanse-deps root-deps) nested-deps)
             ::root-deps    root-deps
-            ::sub-deps     sub-deps
-            ::subrepo-deps @subdeps}))))))
+            ::nested-deps  nested-deps
+            ::subrepo-deps @subrepo-deps}))))))
