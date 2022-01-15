@@ -1,4 +1,5 @@
 (ns interdep.impl.path
+  "Path helpers."
   (:require
    [clojure.string :as str]))
 

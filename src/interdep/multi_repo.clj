@@ -1,14 +1,27 @@
 (ns interdep.multi-repo
-  "Process multiple, local subrepo deps into a unified config."
+  "Process subrepo deps into a unified config."
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]
    [interdep.impl.cli :as cli]
    [interdep.impl.path :as path]))
 
+;; [Note on dep path handling]:
+;; Constraints:
+;;  * Interdep will throw error when processsing any :local/root deps that are not registered.
+;;  * All registered local deps must be inside root repo.
+;; Reasoning: 
+;;   We can change local paths by just counting how many deps forward a dep is registered
+;;   to see how many dirs back a subrepo dep path should be changed to.
+
 (def ^:dynamic opts
   {:registry {}
    :out-dir "."})
+
+(defn local-dep?
+  "Check if x is a local dep map."
+  [x]
+  (and (map? x) (:local/root x)))
 
 (defn- cleanse-deps
   "Remove any custom multi-repo keys from deps config."
@@ -17,19 +30,10 @@
           :interdep.multi-repo/registry
           :interdep.multi-repo/includes))
 
-(defn local-dep?
-  "Check whether x is a local dep map."
-  [x]
-  (and (map? x) (:local/root x)))
+;; --- Validations 
 
-;;;; Validations 
-
-;; Note: since Interdep does not allow unregistered :local/root deps and registered subrepos can't 
-;; be outside root repo, in practice all deps are inside repo itself.
-;; This constraint makes it a bit easier to change local paths, since we can count how many 
-;; dirs foward a registered dep is to see how many dirs back a path should be changed to.
-
-(defn- validate-registry-dep-paths!
+(defn- validate-registered-dep-paths!
+  "Ensure registered deps are inside root repo"
   [registry]
   (some
    #(when (re-find #"\.\.\/" %)
@@ -52,7 +56,7 @@
       (throw (cli/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
   :valid)
 
-;;;; Deps processing 
+;; --- Deps processing 
 
 (defn read-root-config
   "Get root deps cofig loaded by clojure cli."
@@ -75,7 +79,7 @@
                  paths))
     alias-map))
 
-(defn- quality-alias-extra-deps
+(defn- qualify-alias-extra-deps
   "Make any alias local deps be relative to :out-dir."
   [alias-map]
   (if-let [deps (:extra-deps alias-map)]
@@ -98,10 +102,10 @@
               (into {} (for [[k v] aliases]
                          [k (-> v
                                 (qualify-alias-extra-paths subdir)
-                                (quality-alias-extra-deps))]))))))
+                                (qualify-alias-extra-deps))]))))))
 
 (defn- combine-deps
-  "Combines `d2` aliases into `d1` deps map."
+  "Combines dep aliases, with `d2` taking precedence over `d1`."
   [d1 d2]
   (update d1 :aliases merge (get d2 :aliases)))
 
@@ -118,7 +122,8 @@
    (cli/with-err-boundary "Error processing multi-repo dependencies."
      (let [{::keys [registry] :as root-deps} (read-root-config)]
        (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
-         (validate-registry-dep-paths! registry)
+         (validate-registered-dep-paths! registry)
+         ""
          (let [subrepo-deps (atom {})
                nested-deps (reduce
                             (fn [deps subdir]

@@ -4,17 +4,26 @@
    [interdep.impl.cli :as cli]
    [interdep.multi-repo :as mr]))
 
+;; [Example]
+;;  :interdep.multi-alias/profiles
+;;     {:main {:alias-name* [:main]}}
+
+;; [Note on profile alias matching]:
+;; Contraints
+;;  * The combined profiles must have at least one alias matcher configured.
+;; Reasoning: 
+;;  Profile matchers filter out (rather than filter in) aliases. 
+;;  Therefore, if no matchers are passed, all aliases would be included.
+;;  So we ensure at least one matcher is present as it's better to be explicit inclusions.
+
 (defn- cleanse-deps
-  "Remove any custom multi-alias keys from deps config."
+  "Remove any custom multi-repo keys from deps config."
   [deps]
-  (dissoc deps :interdep.multi-alias/profiles))
+  (dissoc deps
+          :interdep.multi-repo/registry
+          :interdep.multi-repo/includes))
 
-;;;; Profile validations 
-
-;; Note: Since the profile alias matchers filter out aliases, when no matchers are passed 
-;; all aliases would be included. This can be suprising if multiple profiles are combined,
-;; so we validate that the final profile include's at least one alias filter, as it's 
-;; better to be explicit inclusions.
+;; --- Profile validations 
 
 (defn validate-combined-profile-map!
   [{:keys [alias-ns* alias-name*] :as _profile} profile-keys]
@@ -23,7 +32,7 @@
     (throw (cli/err "Combined profiles must have at least one alias matcher:" profile-keys)))
   :valid)
 
-;;;; Alias profile matching 
+;; --- Alias profile matching 
 
 (defn- combine-active-profiles
   "Combines active profile keys into a single profile config."

@@ -1,4 +1,5 @@
 (ns interdep.impl.cli
+  "Command line helpers."
   (:require
    [clojure.string :as str])
   (:import
@@ -7,7 +8,7 @@
 (def ^:dynamic *print-err?* true)
 
 (defn err
-  "Throw an cli invariant error. Intended to be caught and printed."
+  "Throw an invariant error, intended to be caught and printed."
   [& msg]
   (ex-info (str/join " " msg) {::invariant true}))
 
