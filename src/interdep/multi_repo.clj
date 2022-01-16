@@ -102,7 +102,7 @@
                                 (qualify-alias-extra-paths subdir)
                                 (qualify-alias-extra-deps))]))))))
 
-(defn- combine-deps
+(defn- combine-aliases
   "Combines dep aliases, with `d2` taking precedence over `d1`."
   [d1 d2]
   (update d1 :aliases merge (get d2 :aliases)))
@@ -126,10 +126,12 @@
                             (fn [deps subdir]
                               (let [sd (read-sub-config subdir)]
                                 (swap! subrepo-deps assoc subdir sd)
-                                (combine-deps deps (parse-subdeps subdir sd))))
+                                (combine-aliases deps (parse-subdeps subdir sd))))
                             {}
                             registry)]
-           {::main-deps    (merge (cleanse-deps root-deps) nested-deps)
+           {::main-deps    (-> root-deps
+                               cleanse-deps
+                               (combine-aliases nested-deps))
             ::root-deps    root-deps
             ::nested-deps  nested-deps
             ::subrepo-deps @subrepo-deps}))))))

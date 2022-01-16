@@ -4,10 +4,6 @@
    [interdep.impl.tools :as tools]
    [interdep.multi-repo :as mr]))
 
-;; [Example]
-;;  :interdep.multi-alias/profiles
-;;     {:main {:alias-name* [:main]}}
-
 ;; [Note on profile alias matching]:
 ;; Contraints
 ;;  * The combined profiles must have at least one alias matcher configured.
