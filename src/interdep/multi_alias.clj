@@ -17,11 +17,9 @@
 ;;  So we ensure at least one matcher is present as it's better to be explicit inclusions.
 
 (defn- cleanse-deps
-  "Remove any custom multi-repo keys from deps config."
+  "Remove custom keys from deps config."
   [deps]
-  (dissoc deps
-          :interdep.multi-repo/registry
-          :interdep.multi-repo/includes))
+  (dissoc deps ::profiles))
 
 ;; --- Profile validations 
 
@@ -39,16 +37,18 @@
   [profiles profile-keys]
   (reduce
    (fn [acc k]
-     (let [m    (get profiles k)
-           p    (:path m)
-           a-ns (:alias-ns* m)
-           a-n  (:alias-name* m)
-           o    (:extra-opts m)]
-       (cond-> acc
-         p    (assoc :path p)
-         a-ns (update :alias-ns* into a-ns)
-         a-n  (update :alias-name* into a-n)
-         o    (update :extra-opts merge o))))
+     (if-let [m (get profiles k)]
+       (let [p    (:path m)
+             a-ns (:alias-ns* m)
+             a-n  (:alias-name* m)
+             o    (:extra-opts m)]
+
+         (cond-> acc
+           p    (assoc :path p)
+           a-ns (update :alias-ns* into a-ns)
+           a-n  (update :alias-name* into a-n)
+           o    (update :extra-opts merge o)))
+       (throw (tools/err "Profile key " k "is not configured."))))
    {:path :default
     :alias-ns*   []
     :alias-name* []
@@ -100,7 +100,9 @@
            (-> processed-deps
                (assoc ::matched-aliases
                       (match-deps-aliases
-                       (if (= path :default) main-deps (get subrepo-deps path))
+                       (if (= path :default)
+                         main-deps
+                         (get subrepo-deps path))
                        alias-ns*
                        alias-name*))
                (assoc ::extra-opts extra-opts)))

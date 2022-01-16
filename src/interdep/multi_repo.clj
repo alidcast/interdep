@@ -26,9 +26,7 @@
 (defn- cleanse-deps
   "Remove any custom multi-repo keys from deps config."
   [deps]
-  (dissoc deps
-          :interdep.multi-repo/registry
-          :interdep.multi-repo/includes))
+  (dissoc deps ::registry))
 
 ;; --- Validations 
 
