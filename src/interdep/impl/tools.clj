@@ -1,5 +1,5 @@
-(ns interdep.impl.cli
-  "Command line helpers."
+(ns interdep.impl.tools
+  "Tools.deps integration helpers."
   (:require
    [clojure.string :as str])
   (:import

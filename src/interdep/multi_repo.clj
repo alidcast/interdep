@@ -1,9 +1,9 @@
 (ns interdep.multi-repo
-  "Process subrepo deps into a unified config."
+  "Unify multiple subrepo deps into one config."
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]
-   [interdep.impl.cli :as cli]
+   [interdep.impl.tools :as tools]
    [interdep.impl.path :as path]))
 
 ;; [Note on dep path handling]:
@@ -37,7 +37,7 @@
   [registry]
   (some
    #(when (re-find #"\.\.\/" %)
-      (throw (cli/err "Registered subrepo path must be inside root repo:" %)))
+      (throw (tools/err "Registered subrepo path must be inside root repo:" %)))
    registry)
   :valid)
 
@@ -45,15 +45,15 @@
   [dir deps]
   (when (or (:paths deps)
             (:deps deps))
-    (throw (cli/err "Only aliased paths and deps are allowed in nested repos."
+    (throw (tools/err "Only aliased paths and deps are allowed in nested repos."
                     {:dir dir})))
   (when-let [k (some (fn [[k]] (when (not (namespace k)) k)) (:aliases deps))]
-    (throw (cli/err "Only namespaced alias keys are allowed in nested repos:" k)))
+    (throw (tools/err "Only namespaced alias keys are allowed in nested repos:" k)))
   (doseq [[_ alias] (:aliases deps)
           [_ dep]  (:extra-deps alias)]
     (when (and (local-dep? dep)
                (not-any? #(= (-> dep :local/root path/strip-back-dirs) %) (:registry opts)))
-      (throw (cli/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
+      (throw (tools/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
   :valid)
 
 ;; --- Deps processing 
@@ -119,11 +119,10 @@
       ::subrepo-deps - Map of registered subrepos paths to their respective deps configs."
   ([] (process-deps {}))
   ([-opts]
-   (cli/with-err-boundary "Error processing multi-repo dependencies."
+   (tools/with-err-boundary "Error processing Interdep repo dependencies."
      (let [{::keys [registry] :as root-deps} (read-root-config)]
        (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
          (validate-registered-dep-paths! registry)
-         ""
          (let [subrepo-deps (atom {})
                nested-deps (reduce
                             (fn [deps subdir]

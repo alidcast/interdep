@@ -1,7 +1,7 @@
 (ns interdep.multi-alias
   "Match multiple deps aliases based on configured profiles."
   (:require
-   [interdep.impl.cli :as cli]
+   [interdep.impl.tools :as tools]
    [interdep.multi-repo :as mr]))
 
 ;; [Example]
@@ -29,7 +29,7 @@
   [{:keys [alias-ns* alias-name*] :as _profile} profile-keys]
   (when (and (empty? alias-ns*)
              (empty? alias-name*))
-    (throw (cli/err "Combined profiles must have at least one alias matcher:" profile-keys)))
+    (throw (tools/err "Combined profiles must have at least one alias matcher:" profile-keys)))
   :valid)
 
 ;; --- Alias profile matching 
@@ -89,7 +89,7 @@
      ::extra-opts    - matched profile extra-opts."
   ([deps] (with-profiles deps []))
   ([-processed-deps profile-keys]
-   (cli/with-err-boundary "Error processing multi-alias profiles."
+   (tools/with-err-boundary "Error processing Interdep alias profiles."
      (let [{::mr/keys [main-deps root-deps subrepo-deps]} -processed-deps
            processed-deps (update -processed-deps ::mr/main-deps cleanse-deps)
            profiles (::profiles root-deps)]
