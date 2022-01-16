@@ -35,12 +35,12 @@
      (let [{:keys [aliases profiles main-args]} opts
            profile-keys  (kw-str->kw-vec profiles)
            alias-keys    (kw-str->kw-vec aliases)
-           {::multi-repo/keys  [nested-deps]
+           {::multi-repo/keys  [main-deps]
             ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process-deps)
                                                       (multi-alias/with-profiles profile-keys))]
        (println "Matched aliases:" matched-aliases)
        (-> (proc/process
-            (cond-> ["clojure" "-Sdeps" (pr-str nested-deps) (apply str "-M" (into matched-aliases alias-keys))]
+            (cond-> ["clojure" "-Sdeps" (pr-str main-deps) (apply str "-M" (into matched-aliases alias-keys))]
               main-args (conj main-args))
             {:inherit true
              :shutdown proc/destroy})
