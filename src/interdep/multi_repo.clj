@@ -3,7 +3,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]
-   [interdep.impl.tools :as tools]
+   [interdep.impl.cli :as cli]
    [interdep.impl.path :as path]))
 
 ;; [Note on dep path handling]:
@@ -35,7 +35,7 @@
   [registry]
   (some
    #(when (re-find #"\.\.\/" %)
-      (throw (tools/err "Registered subrepo path must be inside root repo:" %)))
+      (throw (cli/err "Registered subrepo path must be inside root repo:" %)))
    registry)
   :valid)
 
@@ -43,15 +43,15 @@
   [dir deps]
   (when (or (:paths deps)
             (:deps deps))
-    (throw (tools/err "Only aliased paths and deps are allowed in nested repos."
+    (throw (cli/err "Only aliased paths and deps are allowed in nested repos."
                     {:dir dir})))
   (when-let [k (some (fn [[k]] (when (not (namespace k)) k)) (:aliases deps))]
-    (throw (tools/err "Only namespaced alias keys are allowed in nested repos:" k)))
+    (throw (cli/err "Only namespaced alias keys are allowed in nested repos:" k)))
   (doseq [[_ alias] (:aliases deps)
           [_ dep]  (:extra-deps alias)]
     (when (and (local-dep? dep)
                (not-any? #(= (-> dep :local/root path/strip-back-dirs) %) (:registry opts)))
-      (throw (tools/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
+      (throw (cli/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
   :valid)
 
 ;; --- Deps processing 
@@ -117,7 +117,7 @@
       ::subrepo-deps - Map of registered subrepos paths to their respective deps configs."
   ([] (process-deps {}))
   ([-opts]
-   (tools/with-err-boundary "Error processing Interdep repo dependencies."
+   (cli/with-err-boundary "Error processing Interdep repo dependencies."
      (let [{::keys [registry] :as root-deps} (read-root-config)]
        (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
          (validate-registered-dep-paths! registry)
