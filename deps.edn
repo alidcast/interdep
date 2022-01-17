@@ -2,8 +2,6 @@
  
  :aliases
  {:test
-  {:main-opts ["-m kaocha.runner"]
-   :extra-paths ["test"]
+  {:extra-paths ["test"]
    :extra-deps
-   {lambdaisland/kaocha {:mvn/version "0.0-554"}}}}}
-
+   {lambdaisland/kaocha {:mvn/version "1.0.861"}}}}}
