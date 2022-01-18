@@ -1,6 +1,6 @@
 # Interdep
 
-Interdep is a simple way to manage a monorepo (with *interdependent* projects) using deps.edn. 
+Interdep is a simple way to manage a monorepo (with *interdependent* projects) using Clojure's tools.deps. 
 
 ## Status
 
@@ -32,9 +32,9 @@ The option `:interdep.multi-repo/registry` accepts a vector of subrepo paths to 
 Example: 
 ```clj
 {:interdep.multi-repo/registry
- ["apps/web"
+ ["apps/web" 
   "apps/mobile"
-	"components/app"]
+  "components/app"]
 ```
 
 To make the multi-project setup work optimally, the following constraints are applied when Interdep processes those deps:
@@ -114,7 +114,7 @@ You must call Interdep's task helper before starting a Clojure program. You can 
 
 ```
 {:deps {org.rejoice-cljc/interdep 
-				{:git/url "https://github.com/rejoice-cljc/interdep.git"
+        {:git/url "https://github.com/rejoice-cljc/interdep.git"
          :sha "<latest>"}}
 
  :tasks
