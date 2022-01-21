@@ -11,7 +11,7 @@
            (::ma/matched-aliases
             (ma/with-profiles
              {::mr/root-deps {::ma/profiles {:pro1 {}}}
-              ::mr/main-deps {:aliases {:sub1/env1 :alias}}}
+              ::mr/main-deps {:aliases {:sub1/env1 {}}}}
              [])))))
 
   (testing "does not allow final profile to not have any alias filter."
@@ -21,7 +21,7 @@
          (t/without-err-boundary
           (ma/with-profiles
            {::mr/root-deps  {::ma/profiles {:pro1 {}}}
-            ::mr/main-deps  {:aliases {:sub1/env1 :alias}}}
+            ::mr/main-deps  {:aliases {:sub1/env1 {}}}}
            [:pro1])))))
 
   (testing "matches aliases based on profile alias-ns* filter"
@@ -29,7 +29,7 @@
            (::ma/matched-aliases
             (ma/with-profiles
              {::mr/root-deps  {::ma/profiles {:pro1 {:alias-ns* [:sub1]}}}
-              ::mr/main-deps  {:aliases {:sub1/env1 :alias}}}
+              ::mr/main-deps  {:aliases {:sub1/env1 {}}}}
              [:pro1])))))
 
   (testing "matches aliases based on profile alias-name* filter"
@@ -37,7 +37,7 @@
            (::ma/matched-aliases
             (ma/with-profiles
              {::mr/root-deps  {::ma/profiles {:pro1 {:alias-name* [:env1]}}}
-              ::mr/main-deps  {:aliases {:sub1/env1 :alias}}}
+              ::mr/main-deps  {:aliases {:sub1/env1 {}}}}
              [:pro1])))))
 
   (testing "matches aliases based on profile with combined alias-ns* and alias-name* filters"
@@ -46,20 +46,21 @@
             (ma/with-profiles
              {::mr/root-deps {::ma/profiles {:pro1 {:alias-ns* [:sub1 :sub2]
                                                     :alias-name* [:env1]}}}
-              ::mr/main-deps {:aliases {:sub1/env1 :alias
-                                        :sub1/env2 :alias
-                                        :sub2/env1 :alias
-                                        :sub2/env2 :alias
-                                        :sub3/env1 :alias}}}
+              ::mr/main-deps {:aliases {:sub1/env1 {}
+                                        :sub1/env2 {}
+                                        :sub2/env1 {}
+                                        :sub2/env2 {}
+                                        :sub3/env1 {}}}}
              [:pro1])))))
 
   (testing "matches aliases for specified subrepo path "
     (is (= [:sub1/env1]
            (::ma/matched-aliases
             (ma/with-profiles
-             {::mr/root-deps {::ma/profiles {:pro1 {:path "subrepo1" :alias-name* [:env1]}}}
-              ::mr/subrepo-deps {"subrepo1"
-                                 {:aliases {:sub1/env1 :alias}}}}
-             [:pro1]))))))
+              {::mr/root-deps {::ma/profiles {:pro1 {:alias-name* [:env1]}}}
+               ::mr/subrepo-deps {"subrepo1"
+                                  {:aliases {:sub1/env1 {}}}}}
+              [:pro1]
+              "subrepo1"))))))
 
 

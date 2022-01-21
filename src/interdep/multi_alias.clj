@@ -10,7 +10,7 @@
 ;; Reasoning: 
 ;;  Profile matchers filter out (rather than filter in) aliases. 
 ;;  Therefore, if no matchers are passed, all aliases would be included.
-;;  So we ensure at least one matcher is present as it's better to be explicit inclusions.
+;;  So we ensure at least one matcher is present as it's better to be explicit about inclusions.
 
 (defn- cleanse-deps
   "Remove custom keys from deps config."
@@ -34,19 +34,16 @@
   (reduce
    (fn [acc k]
      (if-let [m (get profiles k)]
-       (let [p    (:path m)
-             a-ns (:alias-ns* m)
+       (let [a-ns (:alias-ns* m)
              a-n  (:alias-name* m)
              o    (:extra-opts m)]
 
          (cond-> acc
-           p    (assoc :path p)
            a-ns (update :alias-ns* into a-ns)
            a-n  (update :alias-name* into a-n)
            o    (update :extra-opts merge o)))
        (throw (cli/err "Profile key " k "is not configured."))))
-   {:path :default
-    :alias-ns*   []
+   {:alias-ns*   []
     :alias-name* []
     :extra-opts  {}}
    profile-keys))
@@ -71,8 +68,6 @@
   "Match active aliases based on profiles in processed deps config.
 
    Profile map options: 
-     :path         - Path to match aliases from. Defaults to :main. 
-                     On conflict: last wins.
      :alias-ns*    - Alias namespaces to match for. 
                      On conflict: conjoined.
      :alias-name*  - Alias names to match for. 
@@ -83,22 +78,22 @@
    Returns processed deps, with following extra properties:
      ::matched-aliases  - matched profile aliases.
      ::extra-opts    - matched profile extra-opts."
-  ([deps] (with-profiles deps []))
-  ([-processed-deps profile-keys]
+  ([deps profile-keys] (with-profiles deps profile-keys nil))
+  ([-processed-deps profile-keys path]
    (cli/with-err-boundary "Error processing Interdep alias profiles."
      (let [{::mr/keys [main-deps root-deps subrepo-deps]} -processed-deps
            processed-deps (update -processed-deps ::mr/main-deps cleanse-deps)
            profiles (::profiles root-deps)]
        (if (seq profile-keys)
-         (let [{:keys [path alias-ns* alias-name* extra-opts]
+         (let [{:keys [alias-ns* alias-name* extra-opts]
                 :as combined-profile} (combine-active-profiles profiles profile-keys)]
            (validate-combined-profile-map! combined-profile profile-keys)
            (-> processed-deps
                (assoc ::matched-aliases
                       (match-deps-aliases
-                       (if (= path :default)
-                         main-deps
-                         (get subrepo-deps path))
+                       (if path
+                         (get subrepo-deps path)
+                         main-deps)
                        alias-ns*
                        alias-name*))
                (assoc ::extra-opts extra-opts)))

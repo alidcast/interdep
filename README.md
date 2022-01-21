@@ -16,9 +16,9 @@ The goal of Interdep, then, is to provide a way to load multiple sub-project ali
 
 * Provide simple utilities that can be used alongside tools.deps. 
 * Preserve `:local/root` convention for configuring local dependencies.
-* Allow activating `aliases` from root directory.
+* All subrepos to configure their deps in their own nested directory.
+* Allow activating subrepo `aliases` from root directory.
 * Provide a streamlined way to call multiple project aliases at once.
-
 ## Documentation
 
 ### Configuration
@@ -50,17 +50,17 @@ Given these safeguards, here is an example of these subrepo configurations:
 ```clj
 ;; -- apps/web
 {:aliases 
- {:web/main 
-  {:extra-paths ["src"]
-	 :extra-deps 
-	  {rejoice/app {:local/root "../components/app"}}}}}   
+  {:web/main 
+   {:extra-paths ["src"]
+    :extra-deps 
+     {rejoice/app {:local/root "../components/app"}}}}}   
 
 ;; -- apps/mobile
 {:aliases 
  {:mobile/main 
   {:extra-paths ["src"]
-	 :extra-deps 
-		{rejoice/app {:local/root "../components/app"}}}}}
+   :extra-deps 
+    {rejoice/app {:local/root "../components/app"}}}}}
 
 ;; -- components/app
 {:aliases 
@@ -77,7 +77,6 @@ After interdep processes those deps, you could call the aliases as normal, or yo
 The option `:interdep.multi-alias/profiles` accepts a map of profile options for matching multiple aliases at once at startup.
 
 Profile options:
-- `:path` - subrepo path to match aliases from. Defaults to matching from unified deps config.
 - `:alias-ns*` - vector of alias key namespaces to match.
 - `:alias-name*` - vector of alias key names to match.
 - `:extra-opts` - extra options to include in context when profile is activated.
@@ -100,7 +99,6 @@ Example config:
  {:mobile/main {,,,}
   :mobile/dev {,,,}}
 ```
-
 
 With the above config, calling the `:dev` profile would match `[:web/main :web/dev :mobile/main :mobile/dev]`.
 
@@ -160,6 +158,7 @@ Returns a map of:
  - `::root-deps`, the root deps config.
  - `::subrepo-deps`, mapping of registered subrepo deps configs.
 
+Usage: `(multi-repo/process-deps)`
 
 **`interdep.multi-alias/with-profiles`** 
 
@@ -169,7 +168,16 @@ Returns map of:
 - `::matched-aliases`, matched aliases based on passed profile keys and configured profile options.
 - `::extra-opts`, merged map of any `:extra-opts` in activated profiles.
 
+Usage: `(multi-alas/with-profiles processed-deps profile-keys ?subrepo-path)`
 
+## Development 
+
+To run tests: 
+
+```
+clj -M:test -m kaocha.runner --watch
+
+```
 ## License
 
 Distributed under the [EPL v2.0](LICENSE)
