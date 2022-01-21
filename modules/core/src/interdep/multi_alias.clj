@@ -12,7 +12,7 @@
 ;;  Therefore, if no matchers are passed, all aliases would be included.
 ;;  So we ensure at least one matcher is present as it's better to be explicit about inclusions.
 
-(defn- cleanse-deps
+(defn- cleanse-root-deps
   "Remove custom keys from deps config."
   [deps]
   (dissoc deps ::profiles))
@@ -82,7 +82,7 @@
   ([-processed-deps profile-keys path]
    (cli/with-err-boundary "Error processing Interdep alias profiles."
      (let [{::mr/keys [main-deps root-deps subrepo-deps]} -processed-deps
-           processed-deps (update -processed-deps ::mr/main-deps cleanse-deps)
+           processed-deps (update -processed-deps ::mr/main-deps cleanse-root-deps)
            profiles (::profiles root-deps)]
        (if (seq profile-keys)
          (let [{:keys [alias-ns* alias-name* extra-opts]

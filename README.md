@@ -13,12 +13,12 @@ With tools.deps alone, you can configure `:local/root` deps for each sub-project
 The goal of Interdep, then, is to provide a way to load multiple sub-project aliases from the root project, while still being able to run the subrepos independently when necessary.
 
 ## Design Goals 
-
-* Provide simple utilities that can be used alongside tools.deps. 
 * Preserve `:local/root` convention for configuring local dependencies.
 * All subrepos to configure their deps in their own nested directory.
 * Allow activating subrepo `aliases` from root directory.
 * Provide a streamlined way to call multiple project aliases at once.
+* Allow using as task runner or as standalone utility used alongside tools.deps.
+ 
 ## Documentation
 
 ### Configuration
@@ -40,32 +40,35 @@ Example:
 To make the multi-project setup work optimally, the following constraints are applied when Interdep processes those deps:
 - Subrepos can only declare namespaced `aliases`, as this prevents conflict when merging multiple aliases together.
   - Example: instead of `:dev` use `:[subrepo]/dev`
-- Subrepos can only declare paths via `aliases`, as this gives you control over which subrepo logic is included on startup.
-  - Example: instead of configuring top-level `:paths` and `:deps`, use `:extra-paths` and `:extra-deps`.
-- Subrepos can only declare local deps inside the root repo, as this simplifies path handling internally and makes your repository reproducible.
+- Subrepos can only declare local:root deps that are inside the root repo, as this simplifies path handling internally and makes your repository reproducible.
   -  If you need to load deps outside root repo, e.g. to load a development library, tools.deps loads a a local, cross-project file (typically found in `~/.clojure/deps.edn`) for these purposes.
 
 Given these safeguards, here is an example of these subrepo configurations:
 
 ```clj
 ;; -- apps/web
-{:aliases 
-  {:web/main 
-   {:extra-paths ["src"]
-    :extra-deps 
-     {rejoice/app {:local/root "../components/app"}}}}}   
+{:paths ["src"]
+ 
+ :deps {rejoice/app {:local/root "../components/app"}
+
+ :aliases 
+  {:web/test {:extra-paths ["test"]}}}   
 
 ;; -- apps/mobile
-{:aliases 
- {:mobile/main 
-  {:extra-paths ["src"]
-   :extra-deps 
-    {rejoice/app {:local/root "../components/app"}}}}}
+{:paths ["src"]
+ 
+ :deps {rejoice/app {:local/root "../components/app"}
+
+ :aliases 
+ {:mobile/test 
+  {:extra-paths ["test"]}}}
 
 ;; -- components/app
-{:aliases 
- {:app/main 
-  {:extra-paths ["src"]}}}
+{:paths ["src"]
+
+ :aliases 
+ {:app/test 
+  {:extra-paths ["test"]}}}
 ```
 
 As shown above, Interdep does not impose any atypical configuration; only practical constraints for a sensible multi-repo setup. 
