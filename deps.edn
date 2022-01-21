@@ -1,7 +1,17 @@
-{:paths ["src"]
- 
+{:interdep.multi-repo/registry
+ ["modules/core"
+  "modules/task"]
+
+ :interdep.multi-alias/profiles
+ {:dev  {:alias-name* [:dev]}
+  :test {:alias-name* [:test]}}
+
+ :deps
+ {interdep/core {:local/root "./modules/core"}
+  interdep/task {:local/root "./modules/task"}}
+
  :aliases
  {:test
   {:extra-paths ["test"]
    :extra-deps
-   {lambdaisland/kaocha {:mvn/version "1.0.861"}}}}}
+   {lambdaisland/kaocha {:mvn/version "1.60.977"}}}}}
