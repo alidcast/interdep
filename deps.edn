@@ -1,6 +1,6 @@
 {:interdep.multi-repo/registry
  ["modules/core"
-  "modules/task"]
+  "modules/cli"]
 
  :interdep.multi-alias/profiles
  {:dev  {:alias-name* [:dev]}
@@ -8,7 +8,7 @@
 
  :deps
  {interdep/core {:local/root "./modules/core"}
-  interdep/task {:local/root "./modules/task"}}
+  interdep/cli  {:local/root "./modules/cli"}}
 
  :aliases
  {:test

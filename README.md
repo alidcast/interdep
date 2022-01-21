@@ -109,24 +109,24 @@ With the above config, calling the `:dev` profile would match `[:web/main :web/d
 
 Interdep can be used as a command line task for starting a Clojure program or as standalone utilities for processing subrepo deps.
 
-#### Task Usage 
+#### Cli Usage 
 
 You must call Interdep's task helper before starting a Clojure program. You can do so with any command like tool. The example below uses [Babashka](https://github.com/babashka/babashka).
 
-```
+```clj
 {:deps {org.rejoice-cljc/interdep 
         {:git/url "https://github.com/rejoice-cljc/interdep.git"
          :sha "<latest>"}}
 
  :tasks
- {:requires ([interdep.task :as interdep])
-  start (interdep/start *command-line-args*)}}
+ {:requires ([interdep.cli :as interdep])
+  run (clojure (interdep/cmd-args *command-line-args*))}}
 ```
 
-The following arguments are accepted:
-* `-A` Aliases to forward to Clojure command.
-* `-P` Match aliases based on configured profiles.
+Interdep processes its custom options and forwards any extra tools.deps arguments to the Clojure command. 
 
+The following extra options are accepted:
+* `-P` Match aliases based on configured profiles.
 
 You could startup Clojure with a configured profile: 
 

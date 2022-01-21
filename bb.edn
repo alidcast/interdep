@@ -1,7 +1,6 @@
 {:deps {interdep/interdep {:local/root "."}}
 
  :tasks
- {:requires ([interdep.task :as interdep])
-
-  start (interdep/start *command-line-args*)}}
+ {:requires ([interdep.cli :as interdep])
+  run (clojure (interdep/cmd-args *command-line-args*))}}
 
