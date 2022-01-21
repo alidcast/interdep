@@ -21,6 +21,8 @@ The goal of Interdep, then, is to provide a way to load multiple sub-project ali
  
 ## Documentation
 
+This repo itself can be used as a reference for below instructions.
+
 ### Configuration
 
 Configure your repository in the tools.deps `deps.edn` file.
@@ -141,7 +143,7 @@ bb start -A:web/main
 
 The intention is to be as transparent with tools.deps existing command line options while adding a few extras to streamline multi-repo usage.
 
-### Utility Usage
+#### Utility Usage
 
 You may use Interdep's utilities for processing deps configs directly. It'd be up to you to make them the basis for a Clojure program.
 
