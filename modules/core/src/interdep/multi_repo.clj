@@ -16,12 +16,13 @@
 
 (def ^:dynamic opts
   {:registry {}
-   :out-dir "."})
+   :out-dir path/root-path})
 
 (defn local-dep?
   "Check if x is a local dep map."
   [x]
   (and (map? x) (:local/root x)))
+
 
 (defn- cleanse-root-deps
   "Remove any custom multi-repo keys from deps config."
@@ -43,11 +44,6 @@
   [deps]
   (when-let [k (some (fn [[k]] (when (not (namespace k)) k)) (:aliases deps))]
     (throw (cli/err "Only namespaced alias keys are allowed in nested repos:" k)))
-  (doseq [[_ alias] (:aliases deps)
-          [_ dep]  (:extra-deps alias)]
-    (when (and (local-dep? dep)
-               (not-any? #(= (-> dep :local/root path/strip-back-dirs) %) (:registry opts)))
-      (throw (cli/err "Only registered subrepos are allowed as :local/root dep:" (:local/root dep)))))
   :valid)
 
 ;; --- Deps processing 
@@ -75,25 +71,35 @@
   (into {} (for [[k v] m]
              (f k v))))
 
-(defn- qualify-subdir-path [subdir path]
-  (path/join (path/make-back-dirs (path/count-foward-dirs (:out-dir opts)))
-             subdir
-             path))
+(defn out-path-back-dirs
+  "Amount dirs back required to reach root from out dir."
+  []
+  (path/make-back-dirs (path/count-foward-dirs (:out-dir opts))))
 
-(defn qualify-subdir-local-dep [path]
-  (path/join (path/make-back-dirs (path/count-foward-dirs (:out-dir opts)))
-             (path/strip-back-dirs path)))
+(defn- qualify-subdir-path
+  "Make nested path relative to out dir."
+  [subdir local-path]
+  (path/join (out-path-back-dirs) subdir local-path))
 
-(defn- update-subdir-paths [subdir paths]
-  (mapv #(qualify-subdir-path subdir %)
-        paths))
+(defn qualify-subdir-local-dep
+  "Make :local/root dep relative to out dir."
+  [subdir local-path]
+  (path/join (out-path-back-dirs)
+             (path/append-base-dirs subdir local-path)))
 
-(defn- update-subdir-deps [deps]
+(defn- update-subdir-paths
+  "Update list of paths to be relative to output dir."
+  [subdir paths]
+  (mapv #(qualify-subdir-path subdir %) paths))
+
+(defn- update-subdir-deps
+  "Update deps map :local/root paths to be relative to output dir."
+  [subdir deps]
   (map-vals deps
             (fn [k v]
               [k
                (if-let [path (:local/root v)]
-                 (assoc v :local/root (qualify-subdir-local-dep path))
+                 (assoc v :local/root (qualify-subdir-local-dep subdir path))
                  v)])))
 
 (defn- parse-subdeps
@@ -103,7 +109,7 @@
   (validate-subrepo-deps-config! deps)
   (-> deps
       (update-key :paths #(update-subdir-paths subdir %))
-      (update-key :deps update-subdir-deps)
+      (update-key :deps #(update-subdir-deps subdir %))
       (update-key :aliases
                   (fn [m]
                     (map-vals
@@ -111,16 +117,16 @@
                      (fn [k v]
                        [k (-> v
                               (update-key :extra-paths #(update-subdir-paths subdir %))
-                              (update-key :extra-deps update-subdir-deps))]))))))
+                              (update-key :extra-deps #(update-subdir-deps subdir %)))]))))))
 
 (defn- combine-deps
   "Combines dep aliases, with `d2` taking precedence over `d1`."
   [d1 d2]
   (let [{:keys [paths deps aliases]} d2]
-   (cond-> d1
-     paths (update :paths into paths)
-     deps (update :deps merge deps)
-     aliases (update :aliases merge aliases))))
+    (cond-> d1
+      paths (update :paths into paths)
+      deps (update :deps merge deps)
+      aliases (update :aliases merge aliases))))
 
 (defn process-deps
   "Process root deps and registered subrepo deps.
@@ -133,20 +139,19 @@
   ([] (process-deps {}))
   ([-opts]
    (cli/with-err-boundary "Error processing Interdep repo dependencies."
-     (let [{::keys [registry] :as root-deps} (read-root-config)]
+     (let [{::keys [registry] :as root-deps} (read-root-config)
+           root-deps (cleanse-root-deps root-deps)]
        (binding [opts (-> opts (merge -opts) (assoc :registry registry))]
          (validate-registered-dep-paths! registry)
          (let [subrepo-deps (atom {})
                nested-deps (reduce
-                            (fn [deps subdir]
-                              (let [sd (read-sub-config subdir)]
-                                (swap! subrepo-deps assoc subdir sd)
-                                (combine-deps deps (parse-subdeps subdir sd))))
+                            (fn [acc subdir]
+                              (let [cfg (read-sub-config subdir)]
+                                (swap! subrepo-deps assoc subdir cfg)
+                                (combine-deps acc (parse-subdeps subdir cfg))))
                             {}
                             registry)]
-           {::main-deps    (-> root-deps
-                               cleanse-root-deps
-                               (combine-deps nested-deps))
+           {::main-deps    (combine-deps nested-deps root-deps)
             ::root-deps    root-deps
             ::nested-deps  nested-deps
             ::subrepo-deps @subrepo-deps}))))))

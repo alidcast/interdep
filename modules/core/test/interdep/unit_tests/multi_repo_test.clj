@@ -26,8 +26,8 @@
 
   (testing "qualifies subrepo :local/root deps"
     (t/with-mock-deps {:root-deps {::mr/registry ["subrepo1"]}
-                       :subdirs-deps {"subrepo1" {:deps {'repo {:local/root "../subrepo1"}}}}}
-      (is (= {:deps {'repo {:local/root "./subrepo1"}}}
+                       :subdirs-deps {"subrepo1" {:deps {'t/dep {:local/root "../subrepo1"}}}}}
+      (is (= {:deps {'t/dep {:local/root "./subrepo1"}}}
              (::mr/main-deps (mr/process-deps))))))
 
   (testing "qualifies subrepo alias extra-paths"
@@ -60,7 +60,15 @@
                                                  {:extra-deps {'t/dep {:local/root "../subrepo2"}}}}}}}
       (is (= {:aliases {:sub1/main {:extra-deps {'t/dep {:local/root "../../../subrepo2"}}}}}
              (::mr/main-deps (mr/process-deps {:out-dir "builds/repos/main"}))))))
-
+  
+    (testing "qualifies subrepo :local/root paths when subrepo is nested"
+      (t/with-mock-deps {:root-deps {::mr/registry ["repo/subrepo1" "repo/subrepo2"]}
+                         :subdirs-deps {"repo/subrepo1"
+                                        {:aliases {:sub1/main
+                                                   {:extra-deps {'t/dep {:local/root "../subrepo2"}}}}}}}
+        (is (= {:aliases {:sub1/main {:extra-deps {'t/dep {:local/root "./repo/subrepo2"}}}}}
+               (::mr/main-deps (mr/process-deps))))))
+  
   (testing "does not allow registering subrepos outside of project"
     (t/with-mock-deps {:root-deps {::mr/registry ["../subrepo1"]}}
       (is
