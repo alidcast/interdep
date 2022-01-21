@@ -14,8 +14,12 @@
 (defn pr-cli [x]
   (str "'" (pr-str x) "'"))
 
+;; :: When adding a new option update [clojure-only-cli-opt?] as well. 
 (def cli-opts
   [;; -- tools.deps opts
+
+   ["-m" "--main-cmd MAIN"
+    "Argument to forward to main command."]
 
    ["-M" "--aliases ALIASES"
     "Aliases to foward to main command."
@@ -23,6 +27,9 @@
     :default []]
 
    ;; -- custom opts
+
+   ["-p" "--path PATH"
+    "Directory paths to activate"]
 
    ["-P" "--profiles PROFILES"
     "Match aliases based on configured profiles."
@@ -34,35 +41,46 @@
     :default false]])
 
 (defn clojure-only-cli-opt?
+  "Check if it's an extra tools.deps option that is unparsed by cli."
   [s]
-  (and (str/starts-with? s "-")
-       (not (or (.contains s "-P")
-                (.contains s "-M")))))
+  (and (some? (re-matches #"^-[a-zA-Z]+" s))
+       (not (or (.contains s "-m")
+                (.contains s "-M")
+                (.contains s "-p")
+                (.contains s "-P")))))
+
+(defn cmd-arg-opt?
+  "Check if it's an opt with double hyphen (e.g. --watch), which are passed to custom commands."
+  [s]
+  (some? (re-matches #"^--[a-zA-Z]+" s)))
 
 (defn handle-cmd
   "Handle command `f` with given `args`."
   [cli-args f]
   (let [{:keys [arguments options summary]} (cli/parse-opts cli-args cli-opts)
-        extra-opts   (filterv clojure-only-cli-opt? cli-args)]
+        dep-opts (filterv clojure-only-cli-opt? cli-args)
+        arg-opts   (filterv cmd-arg-opt? cli-args)]
     (if (:help options)
       (println summary)
-      (f arguments options extra-opts))))
+      (f options
+         dep-opts
+         (into arguments arg-opts)))))
 
 (defn cmd-args [cli-args]
   (handle-cmd
    cli-args
-   (fn [args opts extra-opts]
-     (let [path (first args)
-           {:keys [aliases profiles main-args]} opts
+   (fn [opts dep-opts args]
+     (let [{:keys [path aliases profiles main-cmd]} opts
            {::multi-repo/keys  [main-deps]
             ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process-deps)
                                                       (multi-alias/with-profiles profiles path))
            aliases (into matched-aliases aliases)]
-       (println "Matched aliases:" matched-aliases)  
-       (println extra-opts main-args)
+       (println "Matched aliases:" matched-aliases)
        (str/join
         " "
         (cond-> ["-Sdeps" (pr-cli main-deps)]
-          (seq extra-opts) (into extra-opts)
+          (seq dep-opts) (into dep-opts)
           (seq aliases) (conj (apply str "-M" aliases))
-          main-args  (conj main-args)))))))
+          ;; :: main command and its arguments must come last 
+          main-cmd  (conj (str "-m " main-cmd))
+          args (into args)))))))
