@@ -10,8 +10,7 @@ Alpha. Use as git lib.
 
 With tools.deps alone, you can configure `:local/root` deps for each sub-project, but you can't activate their `aliases` from another project. So in practice, you have to configure all aliases in one place, defeating the purpose of separating logic into interdependent projects.
 
-The goal of Interdep, then, is to provide a way to load multiple sub-project aliases from the root project, while still being able to run the subrepos independently when necessary.
-
+Interdep, as a result, provides a flexible yet standardized a way to unify multiple subrepos configs, update their paths, and activate their aliases from the from the root directory. It's as transparent as possible with tools.deps, so subrepos can be run independently as well.
 ## Design Goals 
 * Preserve `:local/root` convention for configuring local dependencies.
 * All subrepos to configure their deps in their own nested directory.
@@ -23,6 +22,12 @@ The goal of Interdep, then, is to provide a way to load multiple sub-project ali
 
 This repo itself can be used as a reference for below instructions.
 
+- [Configuration](#configuration)
+  - [Multiple Subrepos](#multiple-subrepos)
+  - [Multiple Aliases](#multiple-aliases)
+- [Usage](#usage)
+  - [Command Line Usage](#command-line-usage)
+  - [Utility Usage](#utility-usage)
 ### Configuration
 
 Configure your repository in the tools.deps `deps.edn` file.
@@ -111,7 +116,7 @@ With the above config, calling the `:dev` profile would match `[:web/main :web/d
 
 Interdep can be used as a command line task for starting a Clojure program or as standalone utilities for processing subrepo deps.
 
-#### Cli Usage 
+#### Command Line Usage
 
 You must call Interdep's task helper before starting a Clojure program. You can do so with any command like tool. The example below uses [Babashka](https://github.com/babashka/babashka).
 
