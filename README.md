@@ -185,8 +185,7 @@ Usage: `(multi-alas/with-profiles processed-deps profile-keys ?subrepo-path)`
 To run tests: 
 
 ```
-clj -M:test -m kaocha.runner --watch
-
+bb run -M:test -m kaocha.runner --watch
 ```
 ## License
 

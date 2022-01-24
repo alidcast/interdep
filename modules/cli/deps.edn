@@ -1,2 +1,7 @@
-{:paths ["src"] 
- :deps {interdep/core {:local/root "../core"}}}
+{:paths ["src"]
+ 
+ :deps {interdep/core {:local/root "../core"}}
+
+ :aliases
+ {:cli/test
+  {:extra-paths ["test"]}}}
