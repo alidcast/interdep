@@ -5,9 +5,9 @@
             [interdep.multi-alias :as multi-alias]))
 
 ;; [Paring of arguments note:]
-;; We're using Regex rather than tools.cli [parse-opt] helper because
-;; the intention is to replace our custom arguments and foward the rest 
-;; to tools.deps. Since ordering of arguments matters, easier to use Regex.
+;; We're using Regex rather than tools.cli/arse-opt to parse cli args because
+;; main intention is to replace our custom arguments and let tools.deps handle 
+;; the rest; and since ordering of arguments matters, easier to use Regex.
 
 (def profile-pattern #"-P(:[a-zA-Z]+)?")
 (def main-pattern  #"-M(:[a-zA-Z]+)?")
@@ -28,20 +28,27 @@
                     (first))]
     (kw-str->kw-vec s)))
 
-(defn cmd-args [cli-args]
-  (let [str-args (str/join " " cli-args)
+(defn parse-cli-args
+  [args]
+  (let [str-args (str/join " " args)
         profile-keys (parse-opt str-args profile-pattern)
-        alias-keys (parse-opt str-args main-pattern)
+        alias-keys   (parse-opt str-args main-pattern)
         {::multi-repo/keys  [main-deps]
          ::multi-alias/keys [matched-aliases]} (-> (multi-repo/process-deps)
-                                                   (multi-alias/with-profiles profile-keys nil))
+                                                   (multi-alias/with-profiles profile-keys))
         aliases (into matched-aliases alias-keys)]
-    (println "Matched aliases:" matched-aliases)
+    [str-args main-deps aliases]))
+
+
+(defn enhance-args
+  "Enchance clojure command line arguments with Interdep's options."
+  [cli-args]
+  (let [[str-args main-deps aliases] (parse-cli-args cli-args)]
+    (println "[Interdep] Command aliases:" aliases)
     (str/join
      " "
      ["-Sdeps" (pr-cli main-deps)
       (-> str-args
           (str/replace profile-pattern "")
           (str/replace main-pattern (apply str "-M" aliases)))])))
-
 

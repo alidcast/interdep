@@ -127,7 +127,8 @@ You must call Interdep's task helper before starting a Clojure program. You can 
 
  :tasks
  {:requires ([interdep.cli :as interdep])
-  run (clojure (interdep/cmd-args *command-line-args*))}}
+  run (clojure (interdep/enhance-args *command-line-args*))
+  print-args (clojure (interdep/enhance-args *command-line-args*))}}
 ```
 
 Interdep processes its custom options and forwards any extra tools.deps arguments to the Clojure command. 

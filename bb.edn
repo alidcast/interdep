@@ -2,5 +2,8 @@
 
  :tasks
  {:requires ([interdep.cli :as interdep])
-  run (clojure (interdep/cmd-args *command-line-args*))}}
+  run (clojure (interdep/enhance-args *command-line-args*))
+  
+  print-args (println (interdep/enhance-args *command-line-args*))}}
+
 
