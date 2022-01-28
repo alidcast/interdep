@@ -9,8 +9,8 @@
 ;; main intention is to replace our custom arguments and let tools.deps handle 
 ;; the rest; and since ordering of arguments matters, easier to use Regex.
 
-(def profile-pattern #"-P(:[a-zA-Z]+)?")
-(def main-pattern  #"-M(:[a-zA-Z]+)?")
+(def profile-pattern #"-P(:[a-zA-Z0-9_@./#&+-]+)?")
+(def main-pattern  #"-M(:[a-zA-Z0-9_@./#&+-]+)?")
 
 (defn- kw-str->kw-vec
   "Convert option string of keywords to a vector."
