@@ -1,6 +1,6 @@
 {:paths ["src"]
  
- :deps {interdep/core {:local/root "../core"}}
+ :deps {interdep/core {:local/root "../interdep-core"}}
 
  :aliases
  {:cli/test

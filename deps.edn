@@ -1,14 +1,14 @@
 {:interdep.multi-repo/registry
- ["modules/core"
-  "modules/cli"]
+ ["interdep-core"
+  "interdep-cli"]
 
  :interdep.multi-alias/profiles
  {:dev  {:alias-name* [:dev]}
   :test {:alias-name* [:test]}}
 
  :deps
- {interdep/core {:local/root "./modules/core"}
-  interdep/cli  {:local/root "./modules/cli"}}
+ {interdep/core {:local/root "./interdep-core"}
+  interdep/cli  {:local/root "./interdep-cli"}}
 
  :aliases
  {:test
